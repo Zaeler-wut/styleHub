@@ -1,0 +1,24 @@
+[
+    { 
+        "id": 1, 
+        "category": "bags",
+        "name": "Laptop", 
+        "price": 45000,
+        "image": "https://res.cloudinary.com/dlx86njpw/image/upload/v1759817994/rqlvkwovnbxlyjhnfoix.jpg"
+    },
+    { 
+        "id": 2,
+        "category": "bags",
+        "name": "Mouse", 
+        "price": 1200,
+        "image": "https://res.cloudinary.com/dlx86njpw/image/upload/v1759818504/Mouse_otjdje.jpg"
+    },
+    { 
+        "id": 3,
+        "category": "bags",
+        "name": "Keyboard", 
+        "price": 2500,
+        "image": "https://res.cloudinary.com/dlx86njpw/image/upload/v1759818505/Keyboard_jj45fw.jpg"
+    }
+]
+
