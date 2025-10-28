@@ -1,24 +1,247 @@
 [
-    { 
-        "id": 1, 
-        "category": "bags",
-        "name": "Laptop", 
-        "price": 45000,
-        "image": "https://res.cloudinary.com/dlx86njpw/image/upload/v1759817994/rqlvkwovnbxlyjhnfoix.jpg"
-    },
-    { 
-        "id": 2,
-        "category": "bags",
-        "name": "Mouse", 
-        "price": 1200,
-        "image": "https://res.cloudinary.com/dlx86njpw/image/upload/v1759818504/Mouse_otjdje.jpg"
-    },
-    { 
-        "id": 3,
-        "category": "bags",
-        "name": "Keyboard", 
-        "price": 2500,
-        "image": "https://res.cloudinary.com/dlx86njpw/image/upload/v1759818505/Keyboard_jj45fw.jpg"
-    }
-]
+  {
+    "id": 10,
+    "name": "Luxury Watch",
+    "price": 25000,
+    "storeLink": "https://shopee.com",
+    "category": "accessories",
+    "description": "นาฬิกาหรูสำหรับทุกโอกาส",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1517586979034-fb49a43a7f5e?q=80&w=800"
+    ]
+  },
 
+  { 
+    "id": 11,
+    "name": "Silver Necklace",
+    "price": 1290,
+    "storeLink": "https://shopee.com",
+    "category": "accessories",
+    "description": "สร้อยคอเงินเรียบหรู ใส่ได้ทุกวัน",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1543294001-f7cd5d7fb516?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 12,
+    "name": "Leather Belt",
+    "price": 890,
+    "storeLink": "https://shopee.com",
+    "category": "accessories",
+    "description": "เข็มขัดหนังแท้ หัวโลหะคลาสสิก",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1596755094514-f87e8b919df0?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 13,
+    "name": "Sunglasses",
+    "price": 1590,
+    "storeLink": "https://shopee.com",
+    "category": "accessories",
+    "description": "แว่นกันแดดทรงโมเดิร์น กันรังสี UV",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=800"
+    ]
+  },
+
+  { 
+    "id": 14,
+    "name": "Laptop Bag",
+    "price": 45000,
+    "storeLink": "https://shopee.com",
+    "category": "bags",
+    "description": "กระเป๋าแล็ปท็อปกันกระแทก วัสดุทนทาน",
+    "authentic": false,
+    "images": [
+      "https://images.unsplash.com/photo-1516387938699-a93567ec168e?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 15,
+    "name": "Crossbody Bag",
+    "price": 1290,
+    "storeLink": "https://shopee.com",
+    "category": "bags",
+    "description": "กระเป๋าสะพายข้าง ขนาดกะทัดรัด",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 16,
+    "name": "Backpack",
+    "price": 1790,
+    "storeLink": "https://shopee.com",
+    "category": "bags",
+    "description": "กระเป๋าเป้จุของเยอะ น้ำหนักเบา",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1520975922215-230f77a5b0f8?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 17,
+    "name": "Tote Bag",
+    "price": 890,
+    "storeLink": "https://shopee.com",
+    "category": "bags",
+    "description": "โท้ทผ้าแคนวาส หนาทน ใช้ได้ทุกวัน",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=800"
+    ]
+  },
+
+  { 
+    "id": 18,
+    "name": "Floral Dress",
+    "price": 1390,
+    "storeLink": "https://shopee.com",
+    "category": "clothesWomen",
+    "description": "เดรสลายดอก ผ้านุ่ม พลิ้วสวย",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 19,
+    "name": "Silk Blouse",
+    "price": 990,
+    "storeLink": "https://shopee.com",
+    "category": "clothesWomen",
+    "description": "เสื้อเชิ้ตผ้าไหมสัมผัสนุ่ม ใส่สบาย",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 20,
+    "name": "High-Waist Jeans",
+    "price": 1190,
+    "storeLink": "https://shopee.com",
+    "category": "clothesWomen",
+    "description": "ยีนส์เอวสูงทรงสวย แมตช์ง่าย",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1516826957135-700dedea698c?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 21,
+    "name": "Knit Cardigan",
+    "price": 1290,
+    "storeLink": "https://shopee.com",
+    "category": "clothesWomen",
+    "description": "คาร์ดิแกนถัก โอเวอร์ไซส์อุ่นสบาย",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800"
+    ]
+  },
+
+  { 
+    "id": 22,
+    "name": "Heeled Sandals",
+    "price": 1390,
+    "storeLink": "https://shopee.com",
+    "category": "shoesWomen",
+    "description": "รองเท้าส้นสูงเสริมบุคลิก เดินมั่นใจ",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 23,
+    "name": "White Sneakers",
+    "price": 1590,
+    "storeLink": "https://shopee.com",
+    "category": "shoesWomen",
+    "description": "สนีกเกอร์สีขาว เข้าได้กับทุกลุค",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 24,
+    "name": "Ballet Flats",
+    "price": 990,
+    "storeLink": "https://shopee.com",
+    "category": "shoesWomen",
+    "description": "รองเท้าคัทชูแฟลต นุ่ม เบา",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 25,
+    "name": "Ankle Boots",
+    "price": 1890,
+    "storeLink": "https://shopee.com",
+    "category": "shoesWomen",
+    "description": "บูทข้อสั้น หนังนิ่ม ทรงสวย",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1457954275879-87d67ee659d3?q=80&w=800"
+    ]
+  },
+
+  { 
+    "id": 26,
+    "name": "Polo Shirt",
+    "price": 790,
+    "storeLink": "https://shopee.com",
+    "category": "clothesMen",
+    "description": "เสื้อโปโลผ้าระบายอากาศ ใส่สบาย",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1520975922058-6f2a1b7f9b90?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 27,
+    "name": "Oxford Shirt",
+    "price": 990,
+    "storeLink": "https://shopee.com",
+    "category": "clothesMen",
+    "description": "เชิ้ตอ๊อกฟอร์ด ทางการและลำลอง",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1520975693416-35a66d8d88ae?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 28,
+    "name": "Chino Pants",
+    "price": 1190,
+    "storeLink": "https://shopee.com",
+    "category": "clothesMen",
+    "description": "กางเกงชิโนทรงตรง ผ้าเนียน",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1520975693415-1bcedc1a8f2e?q=80&w=800"
+    ]
+  },
+  { 
+    "id": 29,
+    "name": "Hoodie",
+    "price": 1290,
+    "storeLink": "https://shopee.com",
+    "category": "clothesMen",
+    "description": "ฮู้ดดี้ผ้านุ่ม อุ่นสบาย ใส่ได้ทุกวัน",
+    "authentic": true,
+    "images": [
+      "https://images.unsplash.com/photo-1520975922071-3d2c64b3b1a9?q=80&w=800"
+    ]
+  }
+]

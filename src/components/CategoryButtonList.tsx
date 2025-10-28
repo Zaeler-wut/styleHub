@@ -17,7 +17,7 @@ export default function CategoryButtonList({ limit, className = "" }: Props) {
   return (
     <div className={`mt-6 flex flex-wrap gap-4 ${className}`}>
       {list.map((c) => (
-        <Link to={`/category/${encodeURIComponent(c.id)}`} key={c.id}>
+        <Link to={`/products/${encodeURIComponent(c.id)}`} key={c.id}>
           <Button
             label={c.name}
             variant="outline"
