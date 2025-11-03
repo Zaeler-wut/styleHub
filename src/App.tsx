@@ -1,7 +1,10 @@
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
-import ProductPage from "./pages/ProductPage"; 
+import ProductPage from "./pages/ProductPage";
+import FavoritesPage from "./pages/FavoritePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import './App.css'
 
 function App() {
@@ -14,6 +17,9 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/products" element={<ProductPage />} />
           <Route path="/products/:id" element={<ProductPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           {/* <Route path="/category" element={<CategoryPage />} />
           <Route path="/category/:id" element={<CategoryPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
