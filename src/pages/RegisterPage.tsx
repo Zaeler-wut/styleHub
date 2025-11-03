@@ -48,7 +48,8 @@ export default function RegisterPage() {
     // auto login
     localStorage.setItem("user", JSON.stringify({ name: newUser.name, role: newUser.role }));
 
-    nav("/product");
+    nav("/login");
+
   };
 
   return (
