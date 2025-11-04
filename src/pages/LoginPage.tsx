@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+// src/pages/LoginPage.tsx
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import AuthTabs from "../components/AuthTabs";
 import AuthCard from "../components/AuthCard";
 import TextField from "../components/TextField";
+import baseUsers from "../data/user.json"; // ← admin อยู่ในไฟล์นี้
 
 type User = { name: string; password: string; role: "admin" | "member" };
 
@@ -12,21 +14,6 @@ export default function LoginPage() {
   const [errU, setErrU] = useState("");
   const [errP, setErrP] = useState("");
   const [err, setErr] = useState("");
-
-  // seed บัญชีตัวอย่างถ้ายังไม่มี (admin/demo)
-  useEffect(() => {
-    if (!localStorage.getItem("users_seeded_v1")) {
-      const existing = JSON.parse(localStorage.getItem("users") || "[]");
-      if (!existing || existing.length === 0) {
-        const seed: User[] = [
-          { name: "admin", password: "admin123", role: "admin" },
-          { name: "demo",  password: "demo123",  role: "member" },
-        ];
-        localStorage.setItem("users", JSON.stringify(seed));
-      }
-      localStorage.setItem("users_seeded_v1", "1");
-    }
-  }, []);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,18 +26,35 @@ export default function LoginPage() {
     if (!p) setErrP("กรุณากรอกรหัสผ่าน");
     if (!u || !p) return;
 
-    // ✅ ตรวจสอบกับ users ใน localStorage
-    const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
-    const found = users.find(x => x.name === u && x.password === p);
+    // users จาก localStorage
+    let localUsers: User[] = [];
+    try {
+      const raw = localStorage.getItem("users");
+      const parsed = raw ? JSON.parse(raw) : [];
+      localUsers = Array.isArray(parsed) ? parsed : [];
+    } catch { localUsers = []; }
 
+    // รวมกับ users จากไฟล์ (admin)
+    const merged: User[] = [
+      ...(Array.isArray(baseUsers) ? (baseUsers as User[]) : []),
+      ...localUsers,
+    ];
+
+    const found = merged.find(x => x.name === u && x.password === p);
     if (!found) {
       setErr("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
       return;
     }
 
-    // ✅ เก็บ session แล้วกลับหน้า Home
+    // เก็บ session
     localStorage.setItem("user", JSON.stringify({ name: found.name, role: found.role }));
-    window.location.href = "/"; // ให้ Navbar อ่านชื่อแล้วโชว์ LOGOUT
+
+    // ✅ แยกเส้นทางตาม role
+    if (found.role === "admin") {
+      window.location.href = "/admin";
+    } else {
+      window.location.href = "/";
+    }
   };
 
   return (

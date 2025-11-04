@@ -1,13 +1,14 @@
 // src/pages/RegisterPage.tsx
 import React, { useState } from "react";
-import { useNavigate, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import AuthTabs from "../components/AuthTabs";
 import AuthCard from "../components/AuthCard";
 import TextField from "../components/TextField";
+import baseUsers from "../data/user.json"; // รายชื่อเริ่มต้น เช่น admin
+
+type User = { name: string; password: string; role: "member" | "admin" };
 
 export default function RegisterPage() {
-  const nav = useNavigate();
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -15,16 +16,18 @@ export default function RegisterPage() {
   const [errU, setErrU] = useState("");
   const [errP, setErrP] = useState("");
   const [errC, setErrC] = useState("");
+  const [formErr, setFormErr] = useState("");
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // reset error
-    setErrU(""); setErrP(""); setErrC("");
+    setErrU(""); setErrP(""); setErrC(""); setFormErr("");
 
     // validate
     let ok = true;
-    if (!username.trim()) { setErrU("กรุณากรอกชื่อผู้ใช้"); ok = false; }
-    else if (username.trim().length < 3) { setErrU("ชื่อต้องยาวอย่างน้อย 3 ตัวอักษร"); ok = false; }
+    const u = username.trim();
+    if (!u) { setErrU("กรุณากรอกชื่อผู้ใช้"); ok = false; }
+    else if (u.length < 3) { setErrU("ชื่อต้องยาวอย่างน้อย 3 ตัวอักษร"); ok = false; }
 
     if (!password) { setErrP("กรุณากรอกรหัสผ่าน"); ok = false; }
     else if (password.length < 6) { setErrP("รหัสผ่านต้องยาวอย่างน้อย 6 ตัว"); ok = false; }
@@ -33,23 +36,32 @@ export default function RegisterPage() {
 
     if (!ok) return;
 
-    // mock DB in localStorage
-    const users: Array<{name:string; password:string; role:string}> =
-      JSON.parse(localStorage.getItem("users") || "[]");
+    // โหลด users จาก localStorage แบบกันพัง
+    let localUsers: User[] = [];
+    try {
+      const raw = localStorage.getItem("users");
+      const parsed = raw ? JSON.parse(raw) : [];
+      localUsers = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      localUsers = [];
+    }
 
-    if (users.some(u => u.name.toLowerCase() === username.trim().toLowerCase())) {
-      setErrU("ชื่อนี้ถูกใช้แล้ว");
+    // กันชื่อซ้ำ ทั้งใน local และในไฟล์ JSON (เช่น admin)
+    const takenLocal = localUsers.some(x => x.name.toLowerCase() === u.toLowerCase());
+    const takenBase  = (Array.isArray(baseUsers) ? baseUsers as User[] : [])
+                        .some(x => x.name.toLowerCase() === u.toLowerCase());
+    if (takenLocal || takenBase) {
+      setFormErr("ชื่อนี้ถูกใช้แล้ว");
       return;
     }
 
-    const newUser = { name: username.trim(), password, role: "member" };
-    localStorage.setItem("users", JSON.stringify([...users, newUser]));
+    // เพิ่มผู้ใช้ใหม่ (member) -> บันทึกลง localStorage
+    const newUser: User = { name: u, password, role: "member" };
+    localStorage.setItem("users", JSON.stringify([...localUsers, newUser]));
 
-    // auto login
-    localStorage.setItem("user", JSON.stringify({ name: newUser.name, role: newUser.role }));
-
-    nav("/login");
-
+    // ❌ ไม่ auto-login
+    // ✅ สมัครสำเร็จ -> เด้งไปหน้า login ทันที
+    window.location.href = "/login";
   };
 
   return (
@@ -81,6 +93,12 @@ export default function RegisterPage() {
             onChange={(e)=>setConfirm(e.target.value)}
             error={errC}
           />
+
+          {formErr && (
+            <div className="rounded-md bg-rose-50 text-rose-700 px-3 py-2 text-sm">
+              {formErr}
+            </div>
+          )}
 
           <button
             type="submit"

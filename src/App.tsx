@@ -1,18 +1,22 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import ProductPage from "./pages/ProductPage";
 import FavoritesPage from "./pages/FavoritePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import './App.css'
+import AdminPage from "./pages/AdminPage";
+import "./App.css";
 
 function App() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin"); // ซ่อนทุกหน้าใต้ /admin
 
   return (
     <div className="min-h-dvh w-full">
-      <Navbar />
-      <main className="min-h-[calc(100dvh-64px)]">
+      {!isAdminRoute && <Navbar />}
+
+      <main className={isAdminRoute ? "min-h-dvh" : "min-h-[calc(100dvh-64px)]"}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/products" element={<ProductPage />} />
@@ -20,15 +24,12 @@ function App() {
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          {/* <Route path="/category" element={<CategoryPage />} />
-          <Route path="/category/:id" element={<CategoryPage />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} /> */}
+          <Route path="/admin" element={<AdminPage />} />
+          {/* ถ้ามีซับเพจในแอดมิน: <Route path="/admin/*" element={<AdminPage />} /> */}
         </Routes>
       </main>
     </div>
   );
 }
 
-export default App
+export default App;
