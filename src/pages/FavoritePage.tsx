@@ -1,35 +1,58 @@
-import React, { useEffect, useState } from "react";
+// src/pages/FavoritesPage.tsx
+import React, { useEffect, useMemo, useState } from "react";
 import ProductCard, { type ProductCardProps } from "../components/ProductCard";
-import productsData from "../data/products.json";
 
-const catLabel: Record<string, string> = {
-  bags: "กระเป๋า",
-  accessories: "เครื่องประดับ",
-  clothesWomen: "เสื้อผ้าผู้หญิง",
-  shoesWomen: "รองเท้าผู้หญิง",
-  clothesMen: "เสื้อผ้าผู้ชาย",
+import productsSeed from "../data/products.json";
+import categoriesSeed from "../data/categorys.json";
+
+import { type Product } from "../types/product";
+import { type Category } from "../types/category";
+
+type Props = {
+  products?: Product[];     // สดจาก App (ถ้ามี)
+  categories?: Category[];  // สดจาก App (ถ้ามี) ใช้ทำ label ภาษาไทย
 };
 
-const FavoritesPage: React.FC = () => {
-  // 1) โหลดสินค้าจาก mock (import JSON)
-  const products: ProductCardProps[] = (productsData as any[]).map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: p.price,
-    category: p.category,
-    images: Array.isArray(p.images) ? p.images : [p.image].filter(Boolean),
-    storeLink: p.storeLink,
-    description: p.description,
-    authentic: p.authentic,
-  }));
+const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
+  // ----------- เตรียมสินค้า (ใช้ props ก่อน, ไม่งั้น fallback JSON) -----------
+  const allProducts: ProductCardProps[] = useMemo(() => {
+    const src = (Array.isArray(products) && products.length > 0
+      ? products
+      : (productsSeed as any[])).filter(Boolean);
 
-  // 2) ผู้ใช้ปัจจุบัน + รายการโปรดต่อผู้ใช้
+    return src.map((p: any) => ({
+      id: Number(p.id),
+      name: String(p.name),
+      price: Number(p.price),
+      category: String(p.category || ""),
+      images: Array.isArray(p.images) ? p.images : (p.image ? [p.image] : []),
+      storeLink: p.storeLink || "",
+      description: p.description || "",
+      authentic: !!p.authentic,
+    }));
+  }, [products]);
+
+  // ----------- ทำ label ของหมวดหมู่ (ดึงจาก props.categories ก่อน) -----------
+  const catLabel: Record<string, string> = useMemo(() => {
+    const src = (Array.isArray(categories) && categories.length > 0
+      ? categories
+      : (categoriesSeed as Array<{ id?: string; name?: string }>)
+    ).filter(Boolean);
+
+    const map: Record<string, string> = {};
+    for (const c of src) {
+      const id = String((c as any).id ?? "").trim();
+      if (!id) continue;
+      const name = String((c as any).name ?? "").trim();
+      if (name) map[id] = name;
+    }
+    return map;
+  }, [categories]);
+
+  // ----------- ผู้ใช้ & รายการโปรด -----------
   const [username, setUsername] = useState<string | null>(null);
   const [favIds, setFavIds] = useState<number[]>([]);
   const favKey = username ? `fav:${username}` : null;
-
-  // 3) หมวดที่เลือกในหน้า Favorites (ใช้ dropdown เฉพาะภายในหน้านี้)
-  const [selectedCat, setSelectedCat] = useState<string>("all");
 
   // guard login + load username
   useEffect(() => {
@@ -56,7 +79,7 @@ const FavoritesPage: React.FC = () => {
     }
   }, [favKey]);
 
-  // toggle รายการโปรด (ต่อ user)
+  // toggle favorite
   const toggleFavorite = (id: number) => {
     if (!favKey) {
       window.location.href = "/login";
@@ -69,17 +92,29 @@ const FavoritesPage: React.FC = () => {
     });
   };
 
-  // เฉพาะสินค้าที่ user กดถูกใจ
-  const favProducts = products.filter((p) => favIds.includes(p.id));
+  // เฉพาะสินค้าที่กดถูกใจ
+  const favProducts = useMemo(
+    () => allProducts.filter((p) => favIds.includes(p.id)),
+    [allProducts, favIds]
+  );
 
-  // หมวดที่มีอยู่จริงในรายการโปรด → สำหรับ dropdown
-  const favCategories = Array.from(new Set(favProducts.map((p) => p.category)));
+  // หมวดที่มีในรายการโปรด สำหรับ dropdown
+  const favCategories = useMemo(
+    () => Array.from(new Set(favProducts.map((p) => p.category))),
+    [favProducts]
+  );
 
-  // รายการที่ถูกกรองตาม dropdown
-  const list =
-    selectedCat === "all"
-      ? favProducts
-      : favProducts.filter((p) => p.category === selectedCat);
+  // เลือกหมวดในหน้า Favorites
+  const [selectedCat, setSelectedCat] = useState<string>("all");
+
+  // สินค้าตามหมวดที่เลือก
+  const list = useMemo(
+    () =>
+      selectedCat === "all"
+        ? favProducts
+        : favProducts.filter((p) => p.category === selectedCat),
+    [favProducts, selectedCat]
+  );
 
   return (
     <div className="min-h-dvh w-full bg-gradient-to-b from-pink-200 via-purple-500 to-purple-900">
@@ -90,7 +125,6 @@ const FavoritesPage: React.FC = () => {
             รายการโปรดของฉัน
           </h1>
 
-          {/* dropdown เลือกหมวด */}
           <div className="flex items-center gap-3">
             <label className="text-sm font-semibold text-white/90">หมวดหมู่</label>
             <select

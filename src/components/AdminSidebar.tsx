@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
+
+type TabKey = "dashboard" | "product" | "category";
 
 type Props = {
   open: boolean;
-  current: "dashboard" | "product" | "category";
-  onChangeTab: (t: "dashboard" | "product" | "category") => void;
+  current: TabKey;
+  onChangeTab: (t: TabKey) => void;
   onToggle: () => void;
   onLogout: () => void;
 };
+
+const TAB_STORAGE_KEY = "admin_tab";
 
 export default function AdminSidebar({
   open,
@@ -15,14 +19,23 @@ export default function AdminSidebar({
   onToggle,
   onLogout,
 }: Props) {
-  const Item = (key: Props["current"], label: string, emoji: string) => (
+  // เมื่อมีการเปลี่ยน current จากพาเรนต์ ให้ sync ลง localStorage ไว้ด้วย
+  useEffect(() => {
+    if (current) localStorage.setItem(TAB_STORAGE_KEY, current);
+  }, [current]);
+
+  const handleChange = (key: TabKey) => {
+    localStorage.setItem(TAB_STORAGE_KEY, key);
+    onChangeTab(key);
+  };
+
+  const Item = (key: TabKey, label: string, emoji: string) => (
     <button
-      onClick={() => onChangeTab(key)}
+      onClick={() => handleChange(key)}
+      aria-current={current === key ? "page" : undefined}
       className={[
         "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-semibold transition",
-        current === key
-          ? "bg-white text-gray-900"
-          : "text-white/90 hover:bg-white/10",
+        current === key ? "bg-white text-gray-900" : "text-white/90 hover:bg-white/10",
       ].join(" ")}
     >
       <span className="text-lg">{emoji}</span>
@@ -45,6 +58,7 @@ export default function AdminSidebar({
         <button
           onClick={onToggle}
           className="rounded-lg bg-white/10 px-2 py-1 text-sm md:hidden"
+          aria-label="Toggle sidebar"
         >
           ☰
         </button>

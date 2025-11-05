@@ -1,8 +1,16 @@
+// src/pages/HomePage.tsx
 import React from "react";
 import CategoryButtonList from "../components/CategoryButtonList";
-import CategoryImageGrid from "../components/CategoryImageGrid"; // ของคุณที่ดึงรูปจาก data/categorys.json เช่นกัน
+import CategoryImageGrid from "../components/CategoryImageGrid";
+import { type Product } from "../types/product";
+import { type Category } from "../types/category";
 
-const HomePage: React.FC = () => {
+type Props = {
+  products: Product[];     // เผื่อใช้ต่อ
+  categories: Category[];  // ← ใช้ข้อมูลสดจาก state/LS
+};
+
+const HomePage: React.FC<Props> = ({ products, categories }) => {
   return (
     <div className="min-h-dvh w-full bg-gradient-to-b from-pink-200 via-purple-500 to-purple-900 text-gray-900">
       <section className="mx-auto w-full px-6 py-10 md:py-16">
@@ -17,13 +25,13 @@ const HomePage: React.FC = () => {
             </p>
             <p className="text-md mt-1 text-black/80">เลือกหมวดหมู่ที่สนใจได้เลย !</p>
 
-            {/* ปุ่มหมวดหมู่จากไฟล์จริง */}
-            <CategoryButtonList limit={6} />
+            {/* ปุ่มหมวดหมู่ → ใช้ categories จาก state */}
+            <CategoryButtonList categories={categories} limit={6} />
           </div>
 
-          {/* ขวา: กริดรูปหมวดหมู่ */}
+          {/* ขวา: กริดรูปหมวดหมู่ → ใช้ categories จาก state (รองรับ DataURL) */}
           <div className="md:col-span-6 lg:col-span-7">
-            <CategoryImageGrid />
+            <CategoryImageGrid categories={categories} />
           </div>
         </div>
       </section>

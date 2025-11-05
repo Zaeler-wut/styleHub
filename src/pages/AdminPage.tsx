@@ -1,30 +1,37 @@
 // src/pages/AdminPage.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
 import AdminSidebar from "../components/AdminSidebar";
 import StatCard from "../components/StatCard";
-
-import productsData from "../data/products.json";
-import categoriesData from "../data/categorys.json";
-
-import { type Product } from "../types/product";
-import { loadProducts, saveProducts } from "../services/storage";
 import ProductForm from "../components/ProductForm";
 import ProductTable from "../components/ProductTable";
-
-// ▼ หมวดหมู่
-import { type Category } from "../types/category";
-import { loadCategories, saveCategories } from "../services/categoryStorage";
 import CategoryForm from "../components/CategoryForm";
 import CategoryList from "../components/CategoryList";
+
+import { type Product } from "../types/product";
+import { type Category } from "../types/category";
 
 type Tab = "dashboard" | "product" | "category";
 type User = { name: string; password: string; role: "member" | "admin" };
 
 const FALLBACK_CAT_ID = "uncategorized";
 
-export default function AdminPage() {
-  // ------- guard -------
+// ✅ รับ state ส่วนกลางจาก App เป็น props (useState + set)
+type Props = {
+  products: Product[];
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  categories: Category[];
+  setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
+};
+
+export default function AdminPage({
+  products,
+  setProducts,
+  categories,
+  setCategories,
+}: Props) {
+  // ------- guard: ต้องเป็น admin -------
   useEffect(() => {
     try {
       const u = JSON.parse(localStorage.getItem("user") || "null");
@@ -34,74 +41,12 @@ export default function AdminPage() {
     }
   }, []);
 
-  const [tab, setTab] = useState<Tab>("product");
+  // ✅ เริ่มต้นที่ "dashboard" เสมอ
+  const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // ---------- Categories (อ่านจากไฟล์ + localStorage) ----------
-  const initialCategoriesFromFile: Category[] = useMemo(() => {
-    const map = new Map<string, Category>();
-    (categoriesData as Array<{ id?: string; name?: string; image?: string }>).forEach((raw) => {
-      const id = (raw.id || "").trim();
-      if (!id) return;
-
-      if (!map.has(id)) {
-        map.set(id, {
-          id,
-          name: raw.name?.trim() || undefined,
-          image: raw.image?.trim() || undefined,
-        });
-      } else {
-        const prev = map.get(id)!;
-        map.set(id, {
-          id,
-          name: prev.name || (raw.name?.trim() || undefined),
-          image: prev.image || (raw.image?.trim() || undefined),
-        });
-      }
-    });
-
-    if (map.size === 0) map.set(FALLBACK_CAT_ID, { id: FALLBACK_CAT_ID });
-    return Array.from(map.values());
-  }, []);
-
-  const [categories, setCategories] = useState<Category[]>(
-    () => loadCategories(initialCategoriesFromFile)
-  );
-
-  useEffect(() => {
-    if (categories.length === 0) {
-      setCategories([{ id: FALLBACK_CAT_ID }]);
-      return;
-    }
-    saveCategories(categories);
-  }, [categories]);
-
-  const categoryIds = categories.map((c) => c.id);
-
-  // ---------- Products ----------
-  const mockProducts: Product[] = (productsData as any[]).map((p) => ({
-    id: Number(p.id),
-    name: p.name,
-    price: Number(p.price),
-    category: p.category || FALLBACK_CAT_ID,
-    storeLink: p.storeLink || "",
-    description: p.description || "",
-    authentic: !!p.authentic,
-    images: Array.isArray(p.images) ? p.images : p.image ? [p.image] : [],
-    isFavorite: !!p.isFavorite,
-  }));
-
-  const [products, setProducts] = useState<Product[]>(
-    () => loadProducts(mockProducts)
-  );
-
-  useEffect(() => {
-    const valid = new Set(categoryIds);
-    const fixed = products.map((p) =>
-      valid.has(p.category) ? p : { ...p, category: FALLBACK_CAT_ID }
-    );
-    saveProducts(fixed);
-  }, [products, categoryIds]);
+  const categoryIds =
+    categories.length > 0 ? categories.map((c) => c.id) : [FALLBACK_CAT_ID];
 
   // ผู้ใช้ (โชว์ใน dashboard)
   const [users, setUsers] = useState<User[]>([]);
@@ -114,9 +59,10 @@ export default function AdminPage() {
     }
   }, []);
 
-  // ---------- ฟอร์มสินค้า ----------
-  const [editing, setEditing] = useState<Product | null>(null);
-  function addOrUpdate(p: Product) {
+  // ---------- สินค้า ----------
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  function addOrUpdateProduct(p: Product) {
     setProducts((prev) => {
       const idx = prev.findIndex((x) => x.id === p.id);
       if (idx >= 0) {
@@ -126,58 +72,54 @@ export default function AdminPage() {
       }
       return [p, ...prev];
     });
-    setEditing(null);
+    setEditingProduct(null);
   }
-  function remove(id: number) {
+
+  function removeProduct(id: number) {
     setProducts((prev) => prev.filter((x) => x.id !== id));
   }
 
-  // ---------- จัดการหมวดหมู่ ----------
+  // ---------- หมวดหมู่ ----------
   function addCategory(c: Category) {
     const id = c.id.trim().toLowerCase();
     if (!id) return;
     setCategories((prev) => {
-      if (prev.some((x) => x.id === id)) return prev;
+      if (prev.some((x) => x.id === id)) return prev; // กันซ้ำ
       return [{ ...c, id }, ...prev];
     });
   }
+
   function removeCategory(id: string) {
     if (id === FALLBACK_CAT_ID && categories.length === 1) return;
     setCategories((prev) => prev.filter((x) => x.id !== id));
   }
 
-  // ✅ โหมดแก้ไขหมวดหมู่ (prefill แบบฟอร์ม)
+  // แก้ไขหมวดหมู่แบบพรีฟิลฟอร์ม
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-  // เริ่มแก้ไข (รับ cat ที่ merge แล้วจาก CategoryList)
   function beginEditCategory(cat: Category) {
-    // ทำให้ id เป็นตัวเล็กเสมอ (ให้ไปแมตช์กับระบบ)
     setEditingCategory({ ...cat, id: cat.id.toLowerCase() });
-    // เลื่อนสกรอลล์ขึ้นบนเล็กน้อยให้เห็นฟอร์ม
+    // เลื่อนขึ้นให้เห็นฟอร์ม
     setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   }
 
-  // บันทึกการแก้ไขจากฟอร์ม
   function saveEditCategory(next: Category, originalId?: string) {
     const fromId = (originalId || editingCategory?.id || "").toLowerCase();
     const toId = next.id.trim().toLowerCase();
     if (!toId) return;
 
-    // กันซ้ำ id (ยกเว้นตัวเดิม)
+    // กันซ้ำ (ยกเว้นตัวเดิม)
     if (categories.some((c) => c.id !== fromId && c.id === toId)) {
       alert(`มีรหัส "${toId}" อยู่แล้ว`);
       return;
     }
 
-    // อัปเดต categories
+    // อัปเดตหมวดหมู่
     setCategories((prev) =>
-      prev
-        .map((c) => (c.id === fromId ? { ...c, ...next, id: toId } : c))
-        // กันเผื่อ onEdit ส่ง id ใหม่ไม่ตรงเคส
-        .map((c) => ({ ...c, id: c.id.toLowerCase() }))
+      prev.map((c) => (c.id === fromId ? { ...c, ...next, id: toId } : c))
     );
 
-    // อัปเดตสินค้าให้ชี้ไป id ใหม่ถ้ามีการเปลี่ยน
+    // ถ้าเปลี่ยน id ให้สินค้าอ้างอิง id ใหม่ด้วย
     if (fromId && fromId !== toId) {
       setProducts((prev) =>
         prev.map((p) => (p.category === fromId ? { ...p, category: toId } : p))
@@ -195,6 +137,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-dvh w-full bg-gradient-to-b from-pink-200 via-purple-500 to-purple-900">
       <div className="flex">
+        {/* Sidebar */}
         <AdminSidebar
           open={sidebarOpen}
           onToggle={() => setSidebarOpen((v) => !v)}
@@ -206,6 +149,7 @@ export default function AdminPage() {
           }}
         />
 
+        {/* Content */}
         <main className="flex-1 p-4 sm:p-6 md:p-8">
           {/* top bar */}
           <div className="mb-4 flex items-center justify-between">
@@ -230,6 +174,7 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {/* tabs */}
           {tab === "dashboard" && (
             <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard title="จำนวนสินค้า" value={products.length} icon="🛒" />
@@ -241,35 +186,29 @@ export default function AdminPage() {
           {tab === "product" && (
             <>
               <ProductForm
-                initial={editing}
-                categories={categoryIds.length ? categoryIds : [FALLBACK_CAT_ID]}
-                onSubmit={addOrUpdate}
-                onCancel={() => setEditing(null)}
+                initial={editingProduct}
+                categories={categoryIds}
+                onSubmit={addOrUpdateProduct}
+                onCancel={() => setEditingProduct(null)}
               />
 
               <ProductTable
                 items={products}
-                categories={categoryIds.length ? categoryIds : [FALLBACK_CAT_ID]}
-                onEdit={(p) => setEditing(p)}
-                onDelete={remove}
+                categories={categoryIds}
+                onEdit={(p) => setEditingProduct(p)}
+                onDelete={removeProduct}
               />
             </>
           )}
 
           {tab === "category" && (
             <>
-              {/* ถ้าอยู่ในโหมดแก้ไข ให้โชว์ฟอร์มแบบ prefill แทนฟอร์มเพิ่ม */}
               {editingCategory ? (
                 <CategoryForm
-                  // ⚠️ ต้องให้ CategoryForm เพิ่ม prop เหล่านี้:
-                  //   - initial?: Category
-                  //   - onSubmitEdit?: (cat: Category, originalId: string) => void
-                  //   - onCancelEdit?: () => void
-                  //   (ยังคงมี onAdd อยู่ แต่จะไม่ถูกใช้ในโหมดแก้ไข)
                   initial={editingCategory}
                   onSubmitEdit={(cat) => saveEditCategory(cat, editingCategory.id)}
                   onCancelEdit={cancelEditCategory}
-                  onAdd={() => { /* not used in edit mode */ }}
+                  onAdd={() => {}}
                 />
               ) : (
                 <CategoryForm onAdd={addCategory} />
@@ -278,7 +217,7 @@ export default function AdminPage() {
               <CategoryList
                 items={categories}
                 onDelete={removeCategory}
-                onEdit={beginEditCategory} // ← ส่งเข้าไปเพื่อ prefill
+                onEdit={beginEditCategory}
               />
             </>
           )}

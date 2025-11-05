@@ -1,37 +1,122 @@
-import React, { useEffect, useState } from "react";
+// src/pages/ProductPage.tsx
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+
 import CategorySidebar from "../components/CategorySidebar";
 import ProductCard, { type ProductCardProps } from "../components/ProductCard";
-import productsData from "../data/products.json";
-import rawCategories from "../data/categorys.json";
 
-const ProductPage: React.FC = () => {
-  const { id: selectedKey } = useParams(); // "bags" | "accessories" | ... | undefined
+import productsSeed from "../data/products.json";
+import categoriesSeed from "../data/categorys.json";
 
-  // 1) สินค้าจาก mock (import JSON)
-  const products: ProductCardProps[] = (productsData as any[]).map((p) => ({
-    id: p.id,
-    name: p.name,
-    price: p.price,
-    category: p.category,
-    images: Array.isArray(p.images) ? p.images : [p.image].filter(Boolean),
-    storeLink: p.storeLink,
-    description: p.description,
-    authentic: p.authentic,
-  }));
+import { type Product } from "../types/product";
+import { type Category } from "../types/category";
+import { loadProducts } from "../services/storage";
+import { loadCategories } from "../services/categoryStorage";
 
-  // 2) หมวดหมู่จากไฟล์ (string[])
-  const categories = Array.from(
-    new Set((rawCategories as Array<{ id?: string }>).map((r) => r.id).filter(Boolean))
-  ) as string[];
+type Props = {
+  products?: Product[];     // ถ้า App ส่ง state กลางมาก็ใช้เลย
+  categories?: Category[];  // ถ้า App ส่ง state กลางมาก็ใช้เลย
+};
 
-  // 3) ผู้ใช้ปัจจุบัน + รายการโปรดต่อผู้ใช้
+const norm = (s?: string) => (s ?? "").trim().toLowerCase();
+
+const ProductPage: React.FC<Props> = ({ products, categories }) => {
+  const { id: selectedKeyRaw } = useParams<{ id?: string }>();
+  const selectedKey = norm(selectedKeyRaw);
+
+  // ---------- หมวดหมู่: props > LS > JSON (ไม่รวม/ไม่ union) ----------
+  const catObjects: Array<{ id: string; name?: string }> = useMemo(() => {
+    // 1) props มาก่อน
+    if (Array.isArray(categories) && categories.length > 0) {
+      const map = new Map<string, { id: string; name?: string }>();
+      for (const c of categories) {
+        const id = norm(c.id);
+        if (!id) continue;
+        const name = (c.name || "").trim() || c.id;
+        if (!map.has(id)) map.set(id, { id, name });
+      }
+      return Array.from(map.values());
+    }
+
+    // 2) localStorage
+    const ls = loadCategories(
+      (categoriesSeed as Array<{ id?: string; name?: string }>)
+        .filter(Boolean)
+        .map((c) => ({
+          id: String(c.id || "").trim(),
+          name: String(c.name || "").trim() || undefined,
+        }))
+    );
+    if (ls.length > 0) {
+      const map = new Map<string, { id: string; name?: string }>();
+      for (const c of ls) {
+        const id = norm(c.id);
+        if (!id) continue;
+        const name = (c.name || "").trim() || c.id;
+        if (!map.has(id)) map.set(id, { id, name });
+      }
+      return Array.from(map.values());
+    }
+
+    // 3) JSON fallback
+    const map = new Map<string, { id: string; name?: string }>();
+    for (const c of (categoriesSeed as Array<{ id?: string; name?: string }>)) {
+      const id = norm(String(c?.id || ""));
+      if (!id) continue;
+      const name = (c?.name || "").trim() || c.id!;
+      if (!map.has(id)) map.set(id, { id, name });
+    }
+    return Array.from(map.values());
+  }, [categories]);
+
+  // ---------- สินค้า: props > LS > JSON (ไม่รวม/ไม่ union) ----------
+  const allProducts: ProductCardProps[] = useMemo(() => {
+    const toCard = (arr: any[]): ProductCardProps[] =>
+      arr
+        .filter(Boolean)
+        .map((p: any) => ({
+          id: Number(p.id),
+          name: String(p.name),
+          price: Number(p.price),
+          category: norm(String(p.category || "")),
+          images: Array.isArray(p.images) ? p.images : p.image ? [p.image] : [],
+          storeLink: p.storeLink || "",
+          description: p.description || "",
+          authentic: !!p.authentic,
+        }))
+        .filter((p) => !!p.id);
+
+    // 1) props มาก่อน
+    if (Array.isArray(products) && products.length > 0) {
+      return toCard(products as any[]);
+    }
+
+    // 2) localStorage
+    const ls = loadProducts(
+      (productsSeed as any[]).map((p) => ({
+        id: Number(p.id),
+        name: String(p.name),
+        price: Number(p.price),
+        category: String(p.category || ""),
+        storeLink: p.storeLink || "",
+        description: p.description || "",
+        authentic: !!p.authentic,
+        images: Array.isArray(p.images) ? p.images : p.image ? [p.image] : [],
+        isFavorite: !!p.isFavorite,
+      }))
+    );
+    if (ls.length > 0) return toCard(ls as any[]);
+
+    // 3) JSON fallback
+    return toCard(productsSeed as any[]);
+  }, [products]);
+
+  // ---------- ผู้ใช้ & รายการโปรด ----------
   const [username, setUsername] = useState<string | null>(null);
   const [favIds, setFavIds] = useState<number[]>([]);
   const favKey = username ? `fav:${username}` : null;
 
   useEffect(() => {
-    // โหลด session user
     try {
       const s = JSON.parse(localStorage.getItem("user") || "null");
       setUsername(s?.name ?? null);
@@ -41,7 +126,6 @@ const ProductPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // โหลดรายการโปรดของ user นี้
     if (!favKey) {
       setFavIds([]);
       return;
@@ -54,12 +138,14 @@ const ProductPage: React.FC = () => {
     }
   }, [favKey]);
 
-  // 4) กรองสินค้า: ถ้าไม่มีพารามิเตอร์ (= /product) ให้แสดงทั้งหมด
-  const list = !selectedKey ? products : products.filter((p) => p.category === selectedKey);
+  // ---------- กรองตามหมวด ----------
+  const list = useMemo(() => {
+    if (!selectedKey) return allProducts; // /products => แสดงทั้งหมด
+    return allProducts.filter((p) => p.category === selectedKey);
+  }, [allProducts, selectedKey]);
 
-  // 5) สลับสถานะรายการโปรด (ต่อ user)
+  // ---------- toggle favorite ต่อ user ----------
   const toggleFavorite = (id: number) => {
-    // เผื่อกรณีผู้ใช้ยังไม่ล็อกอินแล้วมาถึงฟังก์ชันนี้ (ปกติการ์ดจะ redirect ให้แล้ว)
     if (!favKey) {
       window.location.href = "/login";
       return;
@@ -74,15 +160,16 @@ const ProductPage: React.FC = () => {
   return (
     <div className="min-h-dvh w-full bg-gradient-to-b from-pink-200 via-purple-500 to-purple-900">
       <section className="mx-auto grid max-w-[1200px] grid-cols-1 gap-6 px-6 py-10 md:py-16 md:grid-cols-[240px_1fr]">
-        <CategorySidebar categories={categories} selectedKey={selectedKey} />
+        {/* ส่ง {id,name} จากโซ่ fallback เดียวกัน → ตรงกับ admin เสมอ */}
+        <CategorySidebar categories={catObjects} selectedKey={selectedKeyRaw} />
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((p) => (
             <ProductCard
               key={p.id}
               {...p}
-              isFav={favIds.includes(p.id)}            // ← ทำหัวใจทึบ/กลวง
-              onToggleFav={() => toggleFavorite(p.id)} // ← อัปเดต fav ต่อ user
+              isFav={favIds.includes(p.id)}
+              onToggleFav={() => toggleFavorite(p.id)}
             />
           ))}
 

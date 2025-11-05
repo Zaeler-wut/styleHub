@@ -103,7 +103,7 @@
     "name": "Floral Dress",
     "price": 1390,
     "storeLink": "https://shopee.com",
-    "category": "clothesWomen",
+    "category": "clotheswomen",
     "description": "เดรสลายดอก ผ้านุ่ม พลิ้วสวย",
     "authentic": true,
     "images": [
@@ -115,7 +115,7 @@
     "name": "Silk Blouse",
     "price": 990,
     "storeLink": "https://shopee.com",
-    "category": "clothesWomen",
+    "category": "clotheswomen",
     "description": "เสื้อเชิ้ตผ้าไหมสัมผัสนุ่ม ใส่สบาย",
     "authentic": true,
     "images": [
@@ -127,7 +127,7 @@
     "name": "High-Waist Jeans",
     "price": 1190,
     "storeLink": "https://shopee.com",
-    "category": "clothesWomen",
+    "category": "clotheswomen",
     "description": "ยีนส์เอวสูงทรงสวย แมตช์ง่าย",
     "authentic": true,
     "images": [
@@ -139,7 +139,7 @@
     "name": "Knit Cardigan",
     "price": 1290,
     "storeLink": "https://shopee.com",
-    "category": "clothesWomen",
+    "category": "clotheswomen",
     "description": "คาร์ดิแกนถัก โอเวอร์ไซส์อุ่นสบาย",
     "authentic": true,
     "images": [
@@ -152,7 +152,7 @@
     "name": "Heeled Sandals",
     "price": 1390,
     "storeLink": "https://shopee.com",
-    "category": "shoesWomen",
+    "category": "shoeswomen",
     "description": "รองเท้าส้นสูงเสริมบุคลิก เดินมั่นใจ",
     "authentic": true,
     "images": [
@@ -164,7 +164,7 @@
     "name": "White Sneakers",
     "price": 1590,
     "storeLink": "https://shopee.com",
-    "category": "shoesWomen",
+    "category": "shoeswomen",
     "description": "สนีกเกอร์สีขาว เข้าได้กับทุกลุค",
     "authentic": true,
     "images": [
@@ -176,7 +176,7 @@
     "name": "Ballet Flats",
     "price": 990,
     "storeLink": "https://shopee.com",
-    "category": "shoesWomen",
+    "category": "shoeswomen",
     "description": "รองเท้าคัทชูแฟลต นุ่ม เบา",
     "authentic": true,
     "images": [
@@ -188,7 +188,7 @@
     "name": "Ankle Boots",
     "price": 1890,
     "storeLink": "https://shopee.com",
-    "category": "shoesWomen",
+    "category": "shoeswomen",
     "description": "บูทข้อสั้น หนังนิ่ม ทรงสวย",
     "authentic": true,
     "images": [
@@ -201,7 +201,7 @@
     "name": "Polo Shirt",
     "price": 790,
     "storeLink": "https://shopee.com",
-    "category": "clothesMen",
+    "category": "clothesmen",
     "description": "เสื้อโปโลผ้าระบายอากาศ ใส่สบาย",
     "authentic": true,
     "images": [
@@ -213,7 +213,7 @@
     "name": "Oxford Shirt",
     "price": 990,
     "storeLink": "https://shopee.com",
-    "category": "clothesMen",
+    "category": "clothesmen",
     "description": "เชิ้ตอ๊อกฟอร์ด ทางการและลำลอง",
     "authentic": true,
     "images": [
@@ -225,7 +225,7 @@
     "name": "Chino Pants",
     "price": 1190,
     "storeLink": "https://shopee.com",
-    "category": "clothesMen",
+    "category": "clothesmen",
     "description": "กางเกงชิโนทรงตรง ผ้าเนียน",
     "authentic": true,
     "images": [
@@ -237,7 +237,7 @@
     "name": "Hoodie",
     "price": 1290,
     "storeLink": "https://shopee.com",
-    "category": "clothesMen",
+    "category": "clothesmen",
     "description": "ฮู้ดดี้ผ้านุ่ม อุ่นสบาย ใส่ได้ทุกวัน",
     "authentic": true,
     "images": [
