@@ -1,7 +1,6 @@
-// src/components/AdminSidebar.tsx
 import React, { useEffect } from "react";
 
-type TabKey = "dashboard" | "product" | "category" | "users";
+type TabKey = "dashboard" | "product" | "category";
 
 type Props = {
   open: boolean;
@@ -20,6 +19,7 @@ export default function AdminSidebar({
   onToggle,
   onLogout,
 }: Props) {
+  // เมื่อมีการเปลี่ยน current จากพาเรนต์ ให้ sync ลง localStorage ไว้ด้วย
   useEffect(() => {
     if (current) localStorage.setItem(TAB_STORAGE_KEY, current);
   }, [current]);
@@ -68,7 +68,6 @@ export default function AdminSidebar({
         {Item("dashboard", "Dashboard", "📊")}
         {Item("product", "Product", "🛍️")}
         {Item("category", "Category", "🏷️")}
-        {Item("users", "Users", "👥")}
       </nav>
 
       <div className="mt-6 rounded-lg bg-white/10 p-3 text-white/90">

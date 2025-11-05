@@ -1,5 +1,5 @@
 // src/pages/AdminPage.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import AdminSidebar from "../components/AdminSidebar";
@@ -9,30 +9,21 @@ import ProductTable from "../components/ProductTable";
 import CategoryForm from "../components/CategoryForm";
 import CategoryList from "../components/CategoryList";
 
-import UsersTable from "../components/UsersTable";
-import UserForm from "../components/UserForm";
-
 import { type Product } from "../types/product";
 import { type Category } from "../types/category";
-import {
-  loadUsers,
-  saveUsers,
-  countAdmins,
-  removeUserFavorites,
-  type User,
-} from "../services/usersStorage";
 
-type Tab = "dashboard" | "product" | "category" | "users";
+type Tab = "dashboard" | "product" | "category";
+type User = { name: string; password: string; role: "member" | "admin" };
+
 const FALLBACK_CAT_ID = "uncategorized";
 
+// ✅ รับ state ส่วนกลางจาก App เป็น props (useState + set)
 type Props = {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   categories: Category[];
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
 };
-
-const USERS_KEY = "users";
 
 export default function AdminPage({
   products,
@@ -41,112 +32,32 @@ export default function AdminPage({
   setCategories,
 }: Props) {
   // ------- guard: ต้องเป็น admin -------
-  const [me, setMe] = useState<User | null>(null);
   useEffect(() => {
     try {
       const u = JSON.parse(localStorage.getItem("user") || "null");
       if (!u || u.role !== "admin") window.location.href = "/login";
-      else setMe(u);
     } catch {
       window.location.href = "/login";
     }
   }, []);
 
-  // เริ่มที่ dashboard
+  // ✅ เริ่มต้นที่ "dashboard" เสมอ
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const categoryIds =
     categories.length > 0 ? categories.map((c) => c.id) : [FALLBACK_CAT_ID];
 
-  // ---------- Users ----------
+  // ผู้ใช้ (โชว์ใน dashboard)
   const [users, setUsers] = useState<User[]>([]);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [keyword, setKeyword] = useState("");
-
-  // โหลด users ครั้งแรก
   useEffect(() => {
-    setUsers(loadUsers());
-  }, []);
-
-  // ถ้า me มีอยู่ แต่ยังไม่ถูกบันทึกในคลัง users → ใส่ให้เลย (กันเคสสถิติเป็น 0)
-  useEffect(() => {
-    if (!me) return;
-    setUsers((prev) => {
-      if (prev.some((u) => u.name === me.name)) return prev;
-      const next = [{ name: me.name, password: me.password, role: me.role }, ...prev];
-      saveUsers(next);
-      return next;
-    });
-  }, [me]);
-
-  // บันทึก users เมื่อมีการเปลี่ยน
-  useEffect(() => {
-    saveUsers(users);
-  }, [users]);
-
-  // sync ข้ามแท็บ/หน้าต่าง
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === USERS_KEY) setUsers(loadUsers());
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  const adminCount = useMemo(() => countAdmins(users), [users]);
-
-  const handleSubmitUser = (payload: User, isEdit: boolean) => {
-    setUsers((prev) => {
-      if (isEdit && editingUser) {
-        // ถ้าลดสิทธิ์แอดมินคนสุดท้าย → ห้าม
-        if (
-          editingUser.role === "admin" &&
-          payload.role !== "admin" &&
-          adminCount <= 1
-        ) {
-          alert("ไม่สามารถลดสิทธิ์แอดมินคนสุดท้ายได้");
-          return prev;
-        }
-        // ถ้ารหัสผ่านว่างตอนแก้ไข → คงรหัสเดิม
-        const old = prev.find((u) => u.name === editingUser.name);
-        const pass = payload.password.trim() || old?.password || "";
-        const next = prev.map((u) =>
-          u.name === editingUser.name
-            ? { ...payload, name: editingUser.name, password: pass }
-            : u
-        );
-        setEditingUser(null);
-        return next;
-      }
-
-      // เพิ่มใหม่ (กันชื่อซ้ำ)
-      if (prev.some((u) => u.name === payload.name)) {
-        alert("มีชื่อผู้ใช้นี้อยู่แล้ว");
-        return prev;
-      }
-      return [{ ...payload }, ...prev];
-    });
-  };
-
-  const handleEditUser = (u: User) => {
-    setEditingUser(u);
-    setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
-  };
-
-  const handleDeleteUser = (u: User) => {
-    if (me && u.name === me.name) {
-      alert("ไม่สามารถลบบัญชีของตัวเองได้");
-      return;
+    try {
+      const arr = JSON.parse(localStorage.getItem("users") || "[]");
+      setUsers(Array.isArray(arr) ? arr : []);
+    } catch {
+      setUsers([]);
     }
-    if (u.role === "admin" && adminCount <= 1) {
-      alert("ไม่สามารถลบแอดมินคนสุดท้ายได้");
-      return;
-    }
-    if (!confirm(`ต้องการลบบัญชี "${u.name}" ใช่ไหม?`)) return;
-    setUsers((prev) => prev.filter((x) => x.name !== u.name));
-    removeUserFavorites(u.name);
-  };
+  }, []);
 
   // ---------- สินค้า ----------
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -173,7 +84,7 @@ export default function AdminPage({
     const id = c.id.trim().toLowerCase();
     if (!id) return;
     setCategories((prev) => {
-      if (prev.some((x) => x.id === id)) return prev;
+      if (prev.some((x) => x.id === id)) return prev; // กันซ้ำ
       return [{ ...c, id }, ...prev];
     });
   }
@@ -183,10 +94,12 @@ export default function AdminPage({
     setCategories((prev) => prev.filter((x) => x.id !== id));
   }
 
+  // แก้ไขหมวดหมู่แบบพรีฟิลฟอร์ม
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   function beginEditCategory(cat: Category) {
     setEditingCategory({ ...cat, id: cat.id.toLowerCase() });
+    // เลื่อนขึ้นให้เห็นฟอร์ม
     setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   }
 
@@ -195,20 +108,28 @@ export default function AdminPage({
     const toId = next.id.trim().toLowerCase();
     if (!toId) return;
 
+    // กันซ้ำ (ยกเว้นตัวเดิม)
     if (categories.some((c) => c.id !== fromId && c.id === toId)) {
       alert(`มีรหัส "${toId}" อยู่แล้ว`);
       return;
     }
 
+    // อัปเดตหมวดหมู่
     setCategories((prev) =>
       prev.map((c) => (c.id === fromId ? { ...c, ...next, id: toId } : c))
     );
 
+    // ถ้าเปลี่ยน id ให้สินค้าอ้างอิง id ใหม่ด้วย
     if (fromId && fromId !== toId) {
       setProducts((prev) =>
         prev.map((p) => (p.category === fromId ? { ...p, category: toId } : p))
       );
     }
+
+    setEditingCategory(null);
+  }
+
+  function cancelEditCategory() {
     setEditingCategory(null);
   }
 
@@ -255,11 +176,10 @@ export default function AdminPage({
 
           {/* tabs */}
           {tab === "dashboard" && (
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard title="จำนวนสินค้า" value={products.length} icon="🛒" />
-              <StatCard title="จำนวนหมวดหมู่" value={categories.length} icon="🏷️" />
+              <StatCard title="จำนวนหมวดหมู่" value={categories.length} icon="📦" />
               <StatCard title="จำนวนผู้ใช้" value={users.length} icon="👤" />
-              <StatCard title="แอดมิน" value={adminCount} icon="🛡️" />
             </section>
           )}
 
@@ -287,7 +207,7 @@ export default function AdminPage({
                 <CategoryForm
                   initial={editingCategory}
                   onSubmitEdit={(cat) => saveEditCategory(cat, editingCategory.id)}
-                  onCancelEdit={() => setEditingCategory(null)}
+                  onCancelEdit={cancelEditCategory}
                   onAdd={() => {}}
                 />
               ) : (
@@ -298,26 +218,6 @@ export default function AdminPage({
                 items={categories}
                 onDelete={removeCategory}
                 onEdit={beginEditCategory}
-              />
-            </>
-          )}
-
-          {tab === "users" && (
-            <>
-              <UserForm
-                editing={editingUser}
-                onSubmit={handleSubmitUser}
-                onCancel={() => setEditingUser(null)}
-              />
-              <div className="h-2" />
-              <UsersTable
-                meName={me?.name ?? null}
-                users={users}
-                adminCount={adminCount}
-                onEdit={handleEditUser}
-                onDelete={handleDeleteUser}
-                keyword={keyword}
-                onKeyword={setKeyword}
               />
             </>
           )}
