@@ -6,7 +6,7 @@ import { uploadImageToCloudinary } from "../services/cloudinary";
 type Props = {
   initial?: Product | null;     // ถ้ามี => โหมดแก้ไข
   categories: string[];
-  onSubmit: (p: Product) => void;
+  onSubmit: (p: Product, isEdit: boolean) => void; // ✅ ส่ง isEdit ออกไปชัดเจน
   onCancel?: () => void;
 };
 
@@ -19,15 +19,14 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
     storeLink: "",
     description: "",
     authentic: false,
-    images: [],          // URL จาก Cloudinary
+    images: [],
     isFavorite: false,
   });
 
   const [uploading, setUploading] = useState(false);
-  const [fileNames, setFileNames] = useState<string[]>([]); // ✅ ค้างชื่อไฟล์ไว้หลังอัปโหลด
+  const [fileNames, setFileNames] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  // เดาชื่อไฟล์จาก URL (กรณี initial มีรูปอยู่แล้ว)
   const guessNameFromUrl = (url: string) => {
     try {
       const u = new URL(url);
@@ -42,20 +41,34 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
   useEffect(() => {
     if (initial) {
       setForm(initial);
-      // ถ้ามีรูปอยู่แล้วแต่ไม่มีชื่อไฟล์ → เดาจาก URL
       if (Array.isArray(initial.images) && initial.images.length > 0) {
         setFileNames((prev) =>
           initial.images.map((url, i) => prev[i] || guessNameFromUrl(url))
         );
       }
+    } else {
+      // เคลียร์ฟอร์มเมื่อออกจากโหมดแก้ไข
+      setForm((s) => ({
+        ...s,
+        id: 0,
+        name: "",
+        price: 0,
+        category: categories[0] || "",
+        storeLink: "",
+        description: "",
+        authentic: false,
+        images: [],
+        isFavorite: false,
+      }));
+      setFileNames([]);
+      if (fileRef.current) fileRef.current.value = "";
     }
-  }, [initial]);
+  }, [initial, categories]);
 
   function update<K extends keyof Product>(key: K, val: Product[K]) {
     setForm((s) => ({ ...s, [key]: val }));
   }
 
-  // ✅ อัปโหลดหลายไฟล์ขึ้น Cloudinary + เก็บชื่อไฟล์ให้ค้างอยู่
   async function handleImages(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -67,7 +80,6 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
       return;
     }
 
-    // โชว์ชื่อไฟล์ที่ “เพิ่มเข้าไปใหม่” ทับกับของเดิม
     setFileNames((prev) => [...prev, ...list.map((f) => f.name)]);
 
     setUploading(true);
@@ -79,41 +91,53 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
       }
       if (urls.length === 0) {
         alert("อัปโหลดรูปไม่สำเร็จ");
-        // ย้อนคืนชื่อไฟล์ที่เพิ่งใส่ (เพราะอัปโหลดไม่สำเร็จ)
         setFileNames((prev) => prev.slice(0, prev.length - list.length));
       } else {
         setForm((s) => ({ ...s, images: [...s.images, ...urls] }));
       }
     } catch {
       alert("เกิดข้อผิดพลาดในการอัปโหลดรูป");
-      // ย้อนคืนชื่อไฟล์
       setFileNames((prev) => prev.slice(0, prev.length - list.length));
     } finally {
       setUploading(false);
-      // ล้างค่า input เพื่อให้เลือกไฟล์ซ้ำชื่อเดิมได้
       if (fileRef.current) fileRef.current.value = "";
     }
   }
 
   function removeImage(idx: number) {
     setForm((s) => ({ ...s, images: s.images.filter((_, i) => i !== idx) }));
-    setFileNames((names) => names.filter((_, i) => i !== idx)); // ✅ ลบชื่อไฟล์คู่กัน
+    setFileNames((names) => names.filter((_, i) => i !== idx));
   }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) { alert("กรุณากรอกชื่อสินค้า"); return; }
-    if (!initial && (!form.id || form.id < 1)) { alert("กรุณากรอกรหัสสินค้า (id)"); return; }
-    if (form.images.length === 0) { alert("กรุณาอัปโหลดรูปอย่างน้อย 1 รูป"); return; }
-    if (uploading) { alert("กำลังอัปโหลดรูป กรุณารอก่อนบันทึก"); return; }
 
-    onSubmit({
+    if (!form.name.trim()) {
+      alert("กรุณากรอกชื่อสินค้า");
+      return;
+    }
+    if (!initial && (!form.id || form.id < 1)) {
+      alert("กรุณากรอกรหัสสินค้า (id)");
+      return;
+    }
+    if (form.images.length === 0) {
+      alert("กรุณาอัปโหลดรูปอย่างน้อย 1 รูป");
+      return;
+    }
+    if (uploading) {
+      alert("กำลังอัปโหลดรูป กรุณารอก่อนบันทึก");
+      return;
+    }
+
+    const payload: Product = {
       ...form,
-      price: Number(form.price) || 0,
       id: Number(form.id),
-    });
+      price: Number(form.price) || 0,
+    };
 
-    // ถ้าเป็นโหมดเพิ่ม → เคลียร์ฟอร์มและชื่อไฟล์
+    onSubmit(payload, !!initial); // ✅ บอกให้ชัดว่าเป็น add หรือ edit
+
+    // ถ้าเป็นโหมดเพิ่ม → เคลียร์ฟอร์ม
     if (!initial) {
       setForm({
         id: 0,
@@ -134,7 +158,7 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl bg-white/90 p-4 shadow ring-1 ring-black/10 mb-4"
+      className="mb-4 rounded-2xl bg-white/90 p-4 shadow ring-1 ring-black/10"
     >
       <h3 className="mb-3 text-base font-bold">
         {initial ? "แก้ไขสินค้า" : "เพิ่มสินค้าใหม่"}
@@ -145,9 +169,15 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
           <label className="block text-sm">รหัสสินค้า / id</label>
           <input
             type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
             className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
-            value={form.id}
-            onChange={(e) => update("id", Number(e.target.value))}
+            value={initial ? initial.id : form.id || ""}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              update("id", Number.isFinite(v) ? v : 0);
+            }}
             placeholder="เช่น 101"
             disabled={!!initial}
           />
@@ -182,7 +212,9 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
             onChange={(e) => update("category", e.target.value)}
           >
             {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
           </select>
         </div>
@@ -208,10 +240,13 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
           />
         </div>
 
-        {/* ✅ อัปโหลดรูปหลายรูปขึ้น Cloudinary + แสดงชื่อไฟล์คงอยู่ */}
+        {/* อัปโหลดรูปหลายรูป */}
         <div className="sm:col-span-2 space-y-2">
           <label className="block text-sm">
-            อัปโหลดรูปภาพ (ได้หลายรูป) {uploading && <span className="text-xs text-blue-600">(กำลังอัปโหลด…)</span>}
+            อัปโหลดรูปภาพ (ได้หลายรูป){" "}
+            {uploading && (
+              <span className="text-xs text-blue-600">(กำลังอัปโหลด…)</span>
+            )}
           </label>
           <input
             ref={fileRef}
@@ -223,21 +258,20 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
             className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
           />
 
-          {/* รายชื่อไฟล์ที่เพิ่มเข้ามา (ค้างอยู่) */}
           {fileNames.length > 0 && (
             <div className="text-xs text-black/70">
-              ไฟล์ที่เพิ่มแล้ว: <span className="font-medium">{fileNames.join(", ")}</span>
+              ไฟล์ที่เพิ่มแล้ว:{" "}
+              <span className="font-medium">{fileNames.join(", ")}</span>
             </div>
           )}
 
-          {/* preview */}
           {form.images.length > 0 && (
-            <div className="mt-2 grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
               {form.images.map((src, i) => (
                 <div key={i} className="relative">
                   <img
                     src={src}
-                    className="h-24 w-full object-cover rounded-lg ring-1 ring-black/10"
+                    className="h-24 w-full rounded-lg object-cover ring-1 ring-black/10"
                     alt={`img-${i}`}
                   />
                   <button
@@ -254,7 +288,7 @@ export default function ProductForm({ initial, categories, onSubmit, onCancel }:
           )}
         </div>
 
-        <label className="inline-flex items-center gap-2 sm:col-span-2">
+        <label className="sm:col-span-2 inline-flex items-center gap-2">
           <input
             type="checkbox"
             checked={!!form.authentic}

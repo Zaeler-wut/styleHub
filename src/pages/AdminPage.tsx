@@ -17,7 +17,6 @@ type User = { name: string; password: string; role: "member" | "admin" };
 
 const FALLBACK_CAT_ID = "uncategorized";
 
-// ✅ รับ state ส่วนกลางจาก App เป็น props (useState + set)
 type Props = {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
@@ -41,7 +40,7 @@ export default function AdminPage({
     }
   }, []);
 
-  // ✅ เริ่มต้นที่ "dashboard" เสมอ
+  // เริ่มที่ dashboard
   const [tab, setTab] = useState<Tab>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -62,16 +61,27 @@ export default function AdminPage({
   // ---------- สินค้า ----------
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  function addOrUpdateProduct(p: Product) {
-    setProducts((prev) => {
-      const idx = prev.findIndex((x) => x.id === p.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = { ...prev[idx], ...p };
-        return next;
+  function addOrUpdateProduct(p: Product, isEdit: boolean) {
+    const newId = Number(p.id);
+    if (!Number.isFinite(newId) || newId <= 0) {
+      alert("กรุณาใส่รหัสสินค้า (id) เป็นตัวเลขมากกว่า 0");
+      return;
+    }
+    if (!isEdit) {
+      const isDup = products.some((x) => Number(x.id) === newId);
+      if (isDup) {
+        const dup = products.find((x) => Number(x.id) === newId);
+        alert(`ไอดี ${newId} มีอยู่แล้ว${dup ? ` (สินค้า: ${dup.name})` : ""}`);
+        return;
       }
-      return [p, ...prev];
-    });
+    }
+    if (isEdit) {
+      setProducts((prev) =>
+        prev.map((x) => (Number(x.id) === newId ? { ...x, ...p, id: newId } : x))
+      );
+    } else {
+      setProducts((prev) => [{ ...p, id: newId }, ...prev]);
+    }
     setEditingProduct(null);
   }
 
@@ -83,10 +93,15 @@ export default function AdminPage({
   function addCategory(c: Category) {
     const id = c.id.trim().toLowerCase();
     if (!id) return;
-    setCategories((prev) => {
-      if (prev.some((x) => x.id === id)) return prev; // กันซ้ำ
-      return [{ ...c, id }, ...prev];
-    });
+
+    // ✅ เช็คซ้ำและเตือนที่ชั้น AdminPage (กันหลุด)
+    const isDup = categories.some((x) => x.id.toLowerCase() === id);
+    if (isDup) {
+      alert(`มีไอดีหมวดหมู่ "${id}" อยู่แล้ว`);
+      return;
+    }
+
+    setCategories((prev) => [{ ...c, id }, ...prev]);
   }
 
   function removeCategory(id: string) {
@@ -94,12 +109,10 @@ export default function AdminPage({
     setCategories((prev) => prev.filter((x) => x.id !== id));
   }
 
-  // แก้ไขหมวดหมู่แบบพรีฟิลฟอร์ม
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   function beginEditCategory(cat: Category) {
     setEditingCategory({ ...cat, id: cat.id.toLowerCase() });
-    // เลื่อนขึ้นให้เห็นฟอร์ม
     setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   }
 
@@ -108,18 +121,15 @@ export default function AdminPage({
     const toId = next.id.trim().toLowerCase();
     if (!toId) return;
 
-    // กันซ้ำ (ยกเว้นตัวเดิม)
     if (categories.some((c) => c.id !== fromId && c.id === toId)) {
       alert(`มีรหัส "${toId}" อยู่แล้ว`);
       return;
     }
 
-    // อัปเดตหมวดหมู่
     setCategories((prev) =>
       prev.map((c) => (c.id === fromId ? { ...c, ...next, id: toId } : c))
     );
 
-    // ถ้าเปลี่ยน id ให้สินค้าอ้างอิง id ใหม่ด้วย
     if (fromId && fromId !== toId) {
       setProducts((prev) =>
         prev.map((p) => (p.category === fromId ? { ...p, category: toId } : p))
@@ -149,29 +159,46 @@ export default function AdminPage({
           }}
         />
 
+        {/* Backdrop (มือถือ) */}
+        <div
+          className={[
+            "fixed inset-0 z-30 bg-black/40 md:hidden",
+            sidebarOpen ? "block" : "hidden",
+          ].join(" ")}
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+
         {/* Content */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8">
-          {/* top bar */}
+        <main className="z-0 flex-1 p-4 sm:p-6 md:p-8">
+          {/* top bar — ปุ่มมุมมองผู้ใช้อยู่ขวาบนทุกแท็บ */}
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-xl font-extrabold text-white drop-shadow-sm">
-              Admin Panel
-            </h1>
-
-            <div className="flex items-center gap-2">
-              <Link
-                to="/"
-                className="rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-black shadow ring-1 ring-black/10 hover:brightness-105"
-              >
-                มุมมองผู้ใช้
-              </Link>
-
+            <div className="flex items-center gap-3">
+              {/* hamburger (ซ้าย) */}
               <button
                 onClick={() => setSidebarOpen((v) => !v)}
-                className="rounded-lg bg-white/90 px-3 py-1 text-sm shadow ring-1 ring-black/10 md:hidden"
+                className="grid h-10 w-10 place-items-center rounded-md bg-white/90 ring-1 ring-black/10 md:hidden"
+                aria-label="Toggle menu"
+                aria-expanded={sidebarOpen}
               >
-                {sidebarOpen ? "Hide" : "Menu"}
+                <div className="space-y-1.5">
+                  <span className={`block h-0.5 w-6 rounded bg-black transition ${sidebarOpen ? "translate-y-2 rotate-45" : ""}`} />
+                  <span className={`block h-0.5 w-6 rounded bg-black transition ${sidebarOpen ? "opacity-0" : ""}`} />
+                  <span className={`block h-0.5 w-6 rounded bg-black transition ${sidebarOpen ? "-translate-y-2 -rotate-45" : ""}`} />
+                </div>
               </button>
+
+              <h1 className="text-xl font-extrabold text-white drop-shadow-sm">
+                Admin Panel
+              </h1>
             </div>
+
+            <Link
+              to="/"
+              className="rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-black shadow ring-1 ring-black/10 hover:brightness-105"
+            >
+              มุมมองผู้ใช้
+            </Link>
           </div>
 
           {/* tabs */}
@@ -184,42 +211,54 @@ export default function AdminPage({
           )}
 
           {tab === "product" && (
-            <>
-              <ProductForm
-                initial={editingProduct}
-                categories={categoryIds}
-                onSubmit={addOrUpdateProduct}
-                onCancel={() => setEditingProduct(null)}
-              />
+            <section className="grid grid-cols-1 gap-4 lg:grid-cols-[420px_minmax(0,1fr)]">
+              <div className="lg:sticky lg:top-6 self-start">
+                <ProductForm
+                  initial={editingProduct}
+                  categories={categoryIds}
+                  onSubmit={addOrUpdateProduct} // (product, isEdit)
+                  onCancel={() => setEditingProduct(null)}
+                />
+              </div>
 
-              <ProductTable
-                items={products}
-                categories={categoryIds}
-                onEdit={(p) => setEditingProduct(p)}
-                onDelete={removeProduct}
-              />
-            </>
+              <div className="rounded-2xl bg-white/90 p-3 shadow ring-1 ring-black/10 overflow-x-auto">
+                <ProductTable
+                  items={products}
+                  categories={categoryIds}
+                  onEdit={(p) => setEditingProduct(p)}
+                  onDelete={removeProduct}
+                />
+              </div>
+            </section>
           )}
 
           {tab === "category" && (
-            <>
-              {editingCategory ? (
-                <CategoryForm
-                  initial={editingCategory}
-                  onSubmitEdit={(cat) => saveEditCategory(cat, editingCategory.id)}
-                  onCancelEdit={cancelEditCategory}
-                  onAdd={() => {}}
-                />
-              ) : (
-                <CategoryForm onAdd={addCategory} />
-              )}
+            <section className="grid grid-cols-1 gap-4 lg:grid-cols-[420px_minmax(0,1fr)]">
+              <div className="lg:sticky lg:top-6 self-start">
+                {editingCategory ? (
+                  <CategoryForm
+                    initial={editingCategory}
+                    onSubmitEdit={(cat) => saveEditCategory(cat, editingCategory.id)}
+                    onCancelEdit={cancelEditCategory}
+                    onAdd={() => {}}
+                    existingIds={categories.map((c) => c.id.toLowerCase())} // ✅ ส่งไปให้ฟอร์มเช็คเบื้องต้น
+                  />
+                ) : (
+                  <CategoryForm
+                    onAdd={addCategory}
+                    existingIds={categories.map((c) => c.id.toLowerCase())} // ✅ ส่งไปให้ฟอร์มเช็คเบื้องต้น
+                  />
+                )}
+              </div>
 
-              <CategoryList
-                items={categories}
-                onDelete={removeCategory}
-                onEdit={beginEditCategory}
-              />
-            </>
+              <div className="rounded-2xl bg-white/90 p-3 shadow ring-1 ring-black/10 overflow-x-auto">
+                <CategoryList
+                  items={categories}
+                  onDelete={removeCategory}
+                  onEdit={beginEditCategory}
+                />
+              </div>
+            </section>
           )}
         </main>
       </div>

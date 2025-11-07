@@ -8,6 +8,7 @@ type Props = {
   initial?: Category | null;                 // โหมดแก้ไขถ้ามีค่า
   onSubmitEdit?: (c: Category) => void;      // ส่งกลับตอนบันทึกแก้ไข
   onCancelEdit?: () => void;                 // ยกเลิกแก้ไข
+  existingIds?: string[];                    // ✅ รายการ id ที่มีอยู่แล้ว (เพื่อเช็คซ้ำ)
 };
 
 export default function CategoryForm({
@@ -15,6 +16,7 @@ export default function CategoryForm({
   initial,
   onSubmitEdit,
   onCancelEdit,
+  existingIds = [],
 }: Props) {
   const isEdit = !!initial && !!onSubmitEdit;
 
@@ -22,16 +24,11 @@ export default function CategoryForm({
   const [slug, setSlug] = useState<string>("");
   const [slugEdited, setSlugEdited] = useState(false);
 
-  // เก็บ URL รูปจาก Cloudinary
   const [image, setImage] = useState<string>("");
 
-  // เหมือน ProductForm
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState<string>("");
   const fileRef = useRef<HTMLInputElement | null>(null);
-
-  // touched สำหรับ validate
-  const [touched, setTouched] = useState<{ name?: boolean; id?: boolean; img?: boolean }>({});
 
   useEffect(() => {
     if (isEdit && initial) {
@@ -39,8 +36,7 @@ export default function CategoryForm({
       setSlug(initial.id || "");
       setSlugEdited(true);
       setImage(initial.image || "");
-      setFileName(""); // ให้เลือกไฟล์ใหม่จะแสดงชื่อไฟล์ล่าสุด
-      setTouched({});
+      setFileName("");
       if (fileRef.current) fileRef.current.value = "";
     }
   }, [isEdit, initial]);
@@ -50,17 +46,14 @@ export default function CategoryForm({
 
   function handleChangeDisplayName(v: string) {
     setDisplayName(v);
-    setTouched((t) => ({ ...t, name: true }));
     if (!slugEdited) setSlug(toSlug(v));
   }
 
   function handleChangeSlug(v: string) {
     setSlugEdited(true);
     setSlug(toSlug(v));
-    setTouched((t) => ({ ...t, id: true }));
   }
 
-  // อัปโหลด 1 รูป ไป Cloudinary (แนวเดียวกับ ProductForm)
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -71,7 +64,6 @@ export default function CategoryForm({
       return;
     }
 
-    setTouched((t) => ({ ...t, img: true }));
     setUploading(true);
     setFileName(f.name);
 
@@ -88,7 +80,6 @@ export default function CategoryForm({
       setFileName("");
     } finally {
       setUploading(false);
-      // อนุญาตให้เลือกไฟล์เดิมซ้ำได้
       if (fileRef.current) fileRef.current.value = "";
     }
   }
@@ -96,15 +87,11 @@ export default function CategoryForm({
   function clearImage() {
     setImage("");
     setFileName("");
-    setTouched((t) => ({ ...t, img: true }));
     if (fileRef.current) fileRef.current.value = "";
   }
 
   const idPreview = toSlug(slug || displayName);
-  const invalidName = !displayName.trim();
-  const invalidId = !idPreview;
-  const invalidImg = !image;
-  const invalid = invalidName || invalidId || invalidImg || uploading;
+  const invalid = uploading || !displayName.trim() || !idPreview || !image;
 
   function resetForm() {
     setDisplayName("");
@@ -112,16 +99,24 @@ export default function CategoryForm({
     setSlugEdited(false);
     setImage("");
     setFileName("");
-    setTouched({});
     if (fileRef.current) fileRef.current.value = "";
   }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    setTouched({ name: true, id: true, img: true });
     if (invalid) {
       if (uploading) alert("กำลังอัปโหลดรูป กรุณารอสักครู่");
+      else alert("กรอกข้อมูลให้ครบก่อนบันทึก");
       return;
+    }
+
+    // ✅ เช็คซ้ำฝั่งฟอร์ม (เฉพาะตอนเพิ่มใหม่)
+    if (!isEdit) {
+      const isDup = existingIds.map((s) => s.toLowerCase()).includes(idPreview);
+      if (isDup) {
+        alert(`มีไอดีหมวดหมู่ "${idPreview}" อยู่แล้ว`);
+        return;
+      }
     }
 
     const payload: Category = {
@@ -148,52 +143,31 @@ export default function CategoryForm({
       </h3>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {/* ชื่อที่แสดงผล */}
         <div className="space-y-1">
-          <label className="block text-sm">
-            ชื่อหมวดหมู่ (ไว้แสดงผล) <span className="text-red-600">*</span>
-          </label>
+          <label className="block text-sm">ชื่อหมวดหมู่ (ไว้แสดงผล)</label>
           <input
-            className={`w-full rounded-md border bg-white px-3 py-2 ${
-              touched.name && invalidName ? "border-red-400 ring-1 ring-red-300" : "border-black/10"
-            }`}
+            className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
             placeholder="เช่น กระเป๋า, เสื้อผ้าผู้ชาย"
             value={displayName}
             onChange={(e) => handleChangeDisplayName(e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, name: true }))}
           />
-          {touched.name && invalidName && (
-            <p className="text-xs text-red-600">กรุณากรอกชื่อหมวดหมู่</p>
-          )}
         </div>
 
-        {/* รหัสหมวด (id) */}
         <div className="space-y-1">
-          <label className="block text-sm">
-            รหัสหมวด (id) <span className="text-red-600">*</span>
-          </label>
+          <label className="block text-sm">รหัสหมวด (id)</label>
           <input
-            className={`w-full rounded-md border bg-white px-3 py-2 font-mono ${
-              touched.id && invalidId ? "border-red-400 ring-1 ring-red-300" : "border-black/10"
-            }`}
+            className="w-full rounded-md border border-black/10 bg-white px-3 py-2 font-mono"
             placeholder="เช่น bags, clothes-men"
             value={slug}
             onChange={(e) => handleChangeSlug(e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, id: true }))}
           />
           <div className="text-xs text-black/60">
             จะบันทึกเป็น:
             <code className="ml-1 rounded bg-black/5 px-1">{idPreview || "—"}</code>
           </div>
-          {touched.id && invalidId && (
-            <p className="text-xs text-red-600">
-              กรุณากรอกรหัสหมวด (ใช้ a-z, 0-9, - เท่านั้น)
-            </p>
-          )}
         </div>
       </div>
 
-      {/* อัปโหลดรูป (แนวเดียวกับ ProductForm) */}
       <div className="mt-3 space-y-2">
         <label className="block text-sm">
           อัปโหลดรูปภาพ (1 รูป){" "}
@@ -212,9 +186,8 @@ export default function CategoryForm({
           {fileName ? <>ไฟล์ที่เลือก: <span className="font-medium">{fileName}</span></> : <>ยังไม่ได้เลือกไฟล์</>}
         </div>
 
-        {/* preview */}
         {image && (
-          <div className="mt-1 relative inline-block">
+          <div className="relative mt-1 inline-block">
             <img
               src={image}
               alt="preview"
@@ -230,13 +203,12 @@ export default function CategoryForm({
             </button>
           </div>
         )}
-
       </div>
 
       <div className="mt-4 flex gap-2">
         <button
           type="submit"
-          disabled={invalid} // กัน submit ระหว่างอัปโหลดและตอนข้อมูลไม่ครบ
+          disabled={invalid}
           className="rounded-md bg-black px-4 py-2 text-white shadow hover:opacity-90 disabled:pointer-events-none"
           title={uploading ? "กำลังอัปโหลดรูป" : invalid ? "กรอกให้ครบก่อนบันทึก" : ""}
         >
