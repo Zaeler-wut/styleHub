@@ -1,4 +1,7 @@
+// src/components/ProductCard.tsx
 import React, { useMemo, useState } from "react";
+import { FiHeart } from "react-icons/fi";
+import { AiFillHeart } from "react-icons/ai";
 
 export interface ProductCardProps {
   id: number;
@@ -25,7 +28,7 @@ export default function ProductCard({
   isFav = false,
   onToggleFav,
 }: CardProps) {
-  // ป้องกันค่าว่าง/ซ้ำ/ช่องว่าง
+  // กันค่าว่าง/ซ้ำ
   const pics = useMemo(
     () => (Array.isArray(images) ? images.filter(Boolean) : []),
     [images]
@@ -34,8 +37,8 @@ export default function ProductCard({
   const [idx, setIdx] = useState(0);
   const total = pics.length;
   const current = total > 0 ? pics[(idx % total + total) % total] : "";
-
   const hasMany = total > 1;
+
   const goPrev = () => hasMany && setIdx((i) => (i - 1 + total) % total);
   const goNext = () => hasMany && setIdx((i) => (i + 1) % total);
 
@@ -72,7 +75,7 @@ export default function ProductCard({
           </div>
         )}
 
-        {/* ปุ่มเลื่อนรูป แสดงต่อเมื่อมีหลายรูป */}
+        {/* ปุ่มเลื่อนรูป (แสดงเมื่อมีหลายรูป) */}
         {hasMany && (
           <>
             <button
@@ -92,7 +95,7 @@ export default function ProductCard({
               &gt;
             </button>
 
-            {/* ตัวบอกตำแหน่ง (dots) */}
+            {/* dots แสดงตำแหน่งรูป */}
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
               {pics.map((_, i) => (
                 <span
@@ -128,25 +131,22 @@ export default function ProductCard({
 
       {/* ปุ่มล่าง */}
       <div className="mt-auto flex items-center justify-center gap-3 pt-4">
+        {/* ❤ ใช้ react-icons */}
         <button
           onClick={handleFavClick}
           aria-pressed={isFav}
+          aria-label={isFav ? "เอาออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
           className={[
             "inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition",
             isFav ? "bg-rose-50 ring-rose-300" : "bg-white ring-rose-300 hover:bg-rose-50",
           ].join(" ")}
           title={isFav ? "เอาออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
         >
-          <svg
-            viewBox="0 0 24 24"
-            className={`h-5 w-5 ${
-              isFav ? "fill-rose-600 stroke-rose-600" : "fill-none stroke-rose-600"
-            }`}
-            strokeWidth={2}
-            aria-hidden="true"
-          >
-            <path d="M12 21s-6.7-4.35-9.33-7.5C.83 11.38 1.26 8.5 3.3 6.9c1.75-1.39 4.34-1.16 5.7.3L12 10.5l3-3.3c1.36-1.46 3.95-1.69 5.7-.3 2.04 1.6 2.47 4.48.63 7.1C18.7 16.65 12 21 12 21z" />
-          </svg>
+          {isFav ? (
+            <AiFillHeart className="h-5 w-5 text-rose-600" />
+          ) : (
+            <FiHeart className="h-5 w-5 text-rose-600" />
+          )}
         </button>
 
         {authentic && (
