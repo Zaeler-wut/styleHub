@@ -35,7 +35,9 @@ export default function AdminSidebar({
       aria-current={current === key ? "page" : undefined}
       className={[
         "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-semibold transition",
-        current === key ? "bg-white text-gray-900" : "text-white/90 hover:bg-white/10",
+        current === key
+          ? "bg-white text-gray-900"
+          : "text-white/90 hover:bg-white/10",
       ].join(" ")}
     >
       <span className="text-lg">{emoji}</span>
@@ -46,14 +48,18 @@ export default function AdminSidebar({
   return (
     <aside
       className={[
-        "fixed z-40 h-dvh w-64 shrink-0 bg-gray-900/95 p-4 text-white shadow-lg ring-1 ring-black/40 md:static",
+        // 👇 fixed ติดซ้ายเต็มความสูงจอ เห็นตลอดเวลาเลื่อน
+        "fixed inset-y-0 left-0 z-40 h-screen w-64 shrink-0 bg-gray-900/95 p-4 text-white shadow-lg ring-1 ring-black/40",
+        // slide-in/out บนมือถือ แต่จอ md ขึ้นไปให้โชว์ตลอด
         open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         "transition-transform",
       ].join(" ")}
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-extrabold text-teal-300">StyleHub</span>
+          <span className="text-xl font-extrabold text-teal-300">
+            StyleHub
+          </span>
         </div>
         <button
           onClick={onToggle}

@@ -170,7 +170,7 @@ export default function AdminPage({
         />
 
         {/* Content */}
-        <main className="z-0 flex-1 p-4 sm:p-6 md:p-8">
+        <main className="z-0 flex-1 p-4 sm:p-6 md:p-8 md:ml-64">
           {/* top bar — ปุ่มมุมมองผู้ใช้อยู่ขวาบนทุกแท็บ */}
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
