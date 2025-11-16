@@ -1,21 +1,21 @@
 // src/components/ProductCard.tsx
-import React, { useMemo, useState } from "react";
-import { FiHeart } from "react-icons/fi";
-import { AiFillHeart } from "react-icons/ai";
+import React, { useMemo, useState } from "react"; // ใช้ useMemo จัดรูปภาพ, useState จัด index รูป
+import { FiHeart } from "react-icons/fi"; // ไอคอนหัวใจแบบกรอบ (ยังไม่ถูกใจ)
+import { AiFillHeart } from "react-icons/ai"; // ไอคอนหัวใจแบบเต็ม (ถูกใจแล้ว)
 
 export interface ProductCardProps {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  images: string[];
-  storeLink?: string;
-  description?: string;
-  authentic?: boolean;
+  id: number; // รหัสสินค้า
+  name: string; // ชื่อสินค้า
+  price: number; // ราคาสินค้า
+  category: string; // หมวดหมู่สินค้า
+  images: string[]; // รายการ URL รูปภาพ
+  storeLink?: string; // ลิงก์ไปหน้าร้าน (ภายนอก)
+  description?: string; // รายละเอียดสินค้า (ข้อความสั้น ๆ)
+  authentic?: boolean; // true = ของแท้
 }
 type CardProps = ProductCardProps & {
-  isFav?: boolean;
-  onToggleFav?: () => void;
+  isFav?: boolean; // อยู่ในรายการโปรดแล้วหรือยัง
+  onToggleFav?: () => void; // ฟังก์ชันสลับสถานะ favorite
 };
 
 export default function ProductCard({
@@ -29,32 +29,32 @@ export default function ProductCard({
   onToggleFav,
 }: CardProps) {
   // กันค่าว่าง/ซ้ำ
-  const pics = useMemo(
-    () => (Array.isArray(images) ? images.filter(Boolean) : []),
-    [images]
+  const pics = useMemo( // เตรียม array รูป: เอาเฉพาะ URL ที่ไม่เป็นค่าว่าง
+    () => (Array.isArray(images) ? images.filter(Boolean) : []), // ถ้าไม่ใช่ array ให้คืน []
+    [images] // คำนวณใหม่เมื่อ images เปลี่ยน
   );
 
-  const [idx, setIdx] = useState(0);
-  const total = pics.length;
-  const current = total > 0 ? pics[(idx % total + total) % total] : "";
-  const hasMany = total > 1;
+  const [idx, setIdx] = useState(0); // index รูปปัจจุบันที่กำลังแสดง
+  const total = pics.length; // จำนวนรูปทั้งหมด
+  const current = total > 0 ? pics[(idx % total + total) % total] : ""; // URL รูปปัจจุบัน (รองรับการวน loop ซ้าย/ขวา)
+  const hasMany = total > 1; // มีรูปมากกว่า 1 รูปไหม
 
-  const goPrev = () => hasMany && setIdx((i) => (i - 1 + total) % total);
-  const goNext = () => hasMany && setIdx((i) => (i + 1) % total);
+  const goPrev = () => hasMany && setIdx((i) => (i - 1 + total) % total); // ย้อนกลับรูปก่อนหน้า (ถ้ามีหลายรูป)
+  const goNext = () => hasMany && setIdx((i) => (i + 1) % total); // ไปยังรูปถัดไป (ถ้ามีหลายรูป)
 
   // เช็คล็อกอินก่อน แล้วค่อย toggle
-  const handleFavClick = () => {
+  const handleFavClick = () => { // เมื่อกดปุ่มหัวใจ
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "null");
-      if (!user) {
-        window.location.href = "/login";
+      const user = JSON.parse(localStorage.getItem("user") || "null"); // ลองอ่าน user จาก localStorage
+      if (!user) { // ถ้าไม่มีผู้ใช้ (ยังไม่ล็อกอิน)
+        window.location.href = "/login"; // ส่งไปหน้า login ก่อน
         return;
       }
     } catch {
-      window.location.href = "/login";
+      window.location.href = "/login"; // ถ้า parse พลาดก็ให้ไปหน้า login เช่นกัน
       return;
     }
-    onToggleFav && onToggleFav();
+    onToggleFav && onToggleFav(); // ถ้าล็อกอินแล้ว และมี callback ให้เรียก toggle favorite
   };
 
   return (
@@ -113,18 +113,18 @@ export default function ProductCard({
 
       {/* รายละเอียด */}
       <div className="mt-3 text-center">
-        <h3 className="text-sm font-extrabold tracking-wide">{name}</h3>
-        <p className="text-xs">Price {price.toLocaleString()}</p>
+        <h3 className="text-sm font-extrabold tracking-wide">{name}</h3> {/* ชื่อสินค้า */}
+        <p className="text-xs">Price {price.toLocaleString()}</p> {/* ราคา แสดงพร้อมคอมมาแยกหลัก */}
         <div className="mt-1 h-5">
           {authentic ? (
-            <span className="text-[10px] font-semibold text-emerald-600">ของแท้</span>
+            <span className="text-[10px] font-semibold text-emerald-600">ของแท้</span> // แสดง badge ของแท้ ถ้า authentic = true
           ) : (
-            <span className="invisible text-[10px] font-semibold">ของแท้</span>
+            <span className="invisible text-[10px] font-semibold">ของแท้</span> // จองพื้นที่ไว้ให้ layout ไม่กระโดด
           )}
         </div>
         {description && (
           <p className="mt-1 min-h-[32px] text-xs text-black/60 line-clamp-2">
-            {description}
+            {description} {/* คำอธิบายสินค้า ตัดให้ไม่เกิน 2 บรรทัด */}
           </p>
         )}
       </div>
@@ -143,15 +143,15 @@ export default function ProductCard({
           title={isFav ? "เอาออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
         >
           {isFav ? (
-            <AiFillHeart className="h-5 w-5 text-rose-600" />
+            <AiFillHeart className="h-5 w-5 text-rose-600" /> // แสดงหัวใจทึบเมื่ออยู่ในรายการโปรด
           ) : (
-            <FiHeart className="h-5 w-5 text-rose-600" />
+            <FiHeart className="h-5 w-5 text-rose-600" /> // แสดงหัวใจโปร่งเมื่อยังไม่ถูกใจ
           )}
         </button>
 
         {authentic && (
           <span className="rounded-full bg-emerald-100 px-4 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-            แท้
+            แท้ {/* badge เพิ่มย้ำว่าเป็นของแท้ */}
           </span>
         )}
 
@@ -162,7 +162,7 @@ export default function ProductCard({
             rel="noopener noreferrer"
             className="rounded-full bg-red-600 px-4 py-1 text-xs font-semibold text-white shadow hover:bg-red-700"
           >
-            SEE MORE
+            VIEW STORE {/* ปุ่มเปิดลิงก์หน้าร้านในแท็บใหม่ */}
           </a>
         ) : (
           <button
@@ -170,7 +170,7 @@ export default function ProductCard({
             className="rounded-full bg-red-600/50 px-4 py-1 text-xs font-semibold text-white/80"
             title="ไม่มีลิงก์ร้าน"
           >
-            SEE MORE
+            VIEW STORE {/* ปุ่มปิดการใช้งานเมื่อไม่มีลิงก์ร้าน */}
           </button>
         )}
       </div>
