@@ -1,5 +1,5 @@
 export interface Category {
-  id: string;       // ชื่อหมวดหมู่ เช่น "bags", "men"
+  id: string;
   name?: string;
-  image?: string;   // URL รูป (ถ้ามี)
+  image?: string;
 }

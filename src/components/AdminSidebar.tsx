@@ -1,23 +1,37 @@
-import React, { useEffect } from "react"; // นำเข้า React และ hook useEffect สำหรับ side-effect
+// Component นี้คือ Sidebar สำหรับหน้า Admin
+// ใช้เลือกแท็บ (Dashboard / Product / Category) และปุ่ม Log out
+import React, { useEffect } from "react";
 import {
   FiMenu,
   FiGrid,
   FiShoppingBag,
   FiTag,
   FiUser,
-} from "react-icons/fi"; // นำเข้า react-icons สำหรับใช้แทน emoji
+} from "react-icons/fi";
 
-type TabKey = "dashboard" | "product" | "category"; // type แท็บที่มีได้ใน sidebar
+// กำหนดชนิดของชื่อแท็บที่ Sidebar รองรับ
+// เพื่อให้โค้ดส่วนอื่นใช้ TabKey แล้วไม่พิมพ์ชื่อแท็บผิด
+type TabKey = "dashboard" | "product" | "category";
 
+/**
+ * กำหนดรูปแบบ Props ที่ Component นี้ต้องการรับจากพาเรนต์
+ * - open        : สถานะเปิด/ปิด sidebar (ใช้ควบคุมบนมือถือ)
+ * - current     : แท็บที่ถูกเลือกอยู่ตอนนี้
+ * - onChangeTab : ฟังก์ชันที่ให้พาเรนต์รู้ว่าเราเปลี่ยนแท็บแล้ว
+ * - onToggle    : ฟังก์ชันสำหรับสลับเปิด/ปิด sidebar
+ * - onLogout    : ฟังก์ชันที่เรียกเมื่อกดปุ่ม Log out
+ */
 type Props = {
-  open: boolean; // สถานะเปิด/ปิด sidebar (สำหรับมือถือ)
-  current: TabKey; // แท็บที่ถูกเลือกอยู่ในปัจจุบัน
-  onChangeTab: (t: TabKey) => void; // callback เปลี่ยนแท็บที่เลือก
-  onToggle: () => void; // callback เปิด/ปิด sidebar
-  onLogout: () => void; // callback เมื่อกด log out
+  open: boolean;
+  current: TabKey;
+  onChangeTab: (t: TabKey) => void;
+  onToggle: () => void;
+  onLogout: () => void;
 };
 
-const TAB_STORAGE_KEY = "admin_tab"; // key ที่ใช้เก็บชื่อแท็บใน localStorage
+// ชื่อ key ที่ใช้เก็บแท็บล่าสุดของแอดมินใน localStorage
+// เพื่อให้รีเฟรชหน้าแล้วกลับมาเปิดแท็บเดิมได้
+const TAB_STORAGE_KEY = "admin_tab";
 
 export default function AdminSidebar({
   open,
@@ -26,80 +40,92 @@ export default function AdminSidebar({
   onToggle,
   onLogout,
 }: Props) {
-  // เมื่อมีการเปลี่ยน current จากพาเรนต์ ให้ sync ลง localStorage ไว้ด้วย
+  // ส่วนนี้ทำหน้าที่ sync ชื่อแท็บปัจจุบันลง localStorage ทุกครั้งที่ current เปลี่ยน
+  // ข้อดีคือเปิดหน้าเว็บใหม่หรือรีเฟรชแล้ว สามารถดึงแท็บเดิมกลับมาใช้ได้
   useEffect(() => {
-    if (current) localStorage.setItem(TAB_STORAGE_KEY, current); // ถ้ามีค่า current ให้บันทึกลง localStorage
-  }, [current]); // dependency คือ current
+    if (current) {
+      localStorage.setItem(TAB_STORAGE_KEY, current);
+    }
+  }, [current]);
 
+  // ฟังก์ชันกลางสำหรับเปลี่ยนแท็บ
+  // 1) บันทึกชื่อแท็บที่เลือกลง localStorage
+  // 2) เรียก onChangeTab เพื่อบอกพาเรนต์ให้เปลี่ยนเนื้อหาในหน้าหลัก
   const handleChange = (key: TabKey) => {
-    // ฟังก์ชันเปลี่ยนแท็บและอัปเดต localStorage
-    localStorage.setItem(TAB_STORAGE_KEY, key); // เก็บชื่อแท็บที่เลือกลง localStorage
-    onChangeTab(key); // แจ้งพาเรนต์ให้เปลี่ยนแท็บ
+    localStorage.setItem(TAB_STORAGE_KEY, key);
+    onChangeTab(key);
   };
 
-  // ฟังก์ชันย่อยสร้างปุ่มแท็บแต่ละอัน (ใช้ React icon แทน emoji)
+  // ฟังก์ชันย่อยสำหรับสร้างปุ่มเมนูแต่ละแท็บใน Sidebar
+  // รับ key (ชื่อแท็บ), label (ข้อความที่โชว์) และ icon (React Icon)
   const Item = (key: TabKey, label: string, icon: React.ReactNode) => (
     <button
-      onClick={() => handleChange(key)} // เมื่อคลิกให้เรียก handleChange ด้วย key ของแท็บนั้น
-      aria-current={current === key ? "page" : undefined} // ใส่ aria-current เมื่อเป็นแท็บปัจจุบัน เพื่อช่วยด้าน accessibility
+      onClick={() => handleChange(key)}
+      // aria-current ใช้ช่วยด้าน accessibility
+      // ถ้าเป็นแท็บปัจจุบันให้ใส่ค่า "page"
+      aria-current={current === key ? "page" : undefined}
       className={[
-        "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-semibold transition", // สไตล์พื้นฐานของปุ่ม
+        "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-semibold transition",
         current === key
-          ? "bg-white text-gray-900" // ถ้าเป็นแท็บปัจจุบัน: พื้นหลังขาว ตัวอักษรเข้ม
-          : "text-white/90 hover:bg-white/10", // ถ้าไม่ใช่แท็บปัจจุบัน: ตัวอักษรจางลง และ hover มีพื้นหลังโปร่ง ๆ
+          ? "bg-white text-gray-900" // สไตล์ของแท็บที่กำลังถูกเลือก
+          : "text-white/90 hover:bg-white/10", // สไตล์ของแท็บที่ยังไม่ถูกเลือก
       ].join(" ")}
     >
-      <span className="text-lg">{icon}</span> {/* แสดง react-icon ของเมนู */}
-      <span>{label}</span> {/* ข้อความ label ของเมนู */}
+      <span className="text-lg">{icon}</span>
+      <span>{label}</span>
     </button>
   );
 
   return (
     <aside
       className={[
-        "fixed inset-y-0 left-0 z-40 h-screen w-64 shrink-0 bg-gray-900/95 p-4 text-white shadow-lg ring-1 ring-black/40", // sidebar ติดซ้ายเต็มความสูงจอ พื้นหลังเข้ม
-        open ? "translate-x-0" : "-translate-x-full md:translate-x-0", // ถ้า open ให้เลื่อนเข้ามา, ถ้าไม่ open ซ่อนนอกจอ (แต่จอ md ขึ้นไปให้โชว์ตลอด)
-        "transition-transform", // ใส่เอฟเฟกต์เลื่อนเข้าออกนุ่มนวล
+        // กำหนดให้ Sidebar ติดด้านซ้ายสูงเต็มหน้าจอ และมีพื้นหลังสีเข้ม
+        "fixed inset-y-0 left-0 z-40 h-screen w-64 shrink-0 bg-gray-900/95 p-4 text-white shadow-lg ring-1 ring-black/40",
+        // ควบคุมการเลื่อนเข้า/ออกของ Sidebar บนจอเล็กด้วยคลาส translate
+        open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        "transition-transform",
       ].join(" ")}
     >
+      {/* ส่วนหัวของ Sidebar: แสดงชื่อระบบ + ปุ่ม Toggle บนจอเล็ก */}
       <div className="mb-4 flex items-center justify-between">
-        {/* แถวบนสุดของ sidebar: โลโก้ + ปุ่ม toggle */}
+        {/* โลโก้หรือชื่อระบบ */}
         <div className="flex items-center gap-2">
-          {/* กลุ่มโลโก้ / ชื่อระบบ */}
           <span className="text-xl font-extrabold text-teal-300">
-            StyleHub {/* ชื่อระบบ admin */}
+            StyleHub
           </span>
         </div>
+
+        {/* ปุ่มเปิด/ปิด Sidebar (แสดงเฉพาะบนมือถือ / จอขนาดเล็ก) */}
         <button
-          onClick={onToggle} // กดเพื่อเปิด/ปิด sidebar (เฉพาะจอเล็ก)
-          className="rounded-lg bg-white/10 px-2 py-1 text-sm md:hidden" // แสดงปุ่มเฉพาะบนมือถือ (ซ่อนบน md ขึ้นไป)
+          onClick={onToggle}
+          className="rounded-lg bg-white/10 px-2 py-1 text-sm md:hidden"
           aria-label="Toggle sidebar"
         >
-          <FiMenu className="text-lg" /> {/* ไอคอนเมนู (hamburger) จาก react-icons */}
+          <FiMenu className="text-lg" />
         </button>
       </div>
 
+      {/* โซนเมนูหลักสำหรับสลับแท็บของหน้า Admin */}
       <nav className="space-y-2">
-        {/* โซนเมนูหลัก: dashboard / product / category */}
-        {Item("dashboard", "Dashboard", <FiGrid />)} {/* ปุ่มไปหน้า dashboard */}
-        {Item("product", "Product", <FiShoppingBag />)} {/* ปุ่มไปหน้าจัดการสินค้า */}
-        {Item("category", "Category", <FiTag />)} {/* ปุ่มไปหน้าจัดการหมวดหมู่ */}
+        {Item("dashboard", "Dashboard", <FiGrid />)}
+        {Item("product", "Product", <FiShoppingBag />)}
+        {Item("category", "Category", <FiTag />)}
       </nav>
 
+      {/* กล่องแสดงข้อมูลสั้น ๆ ของผู้ใช้ (Admin) ด้านล่างเมนู */}
       <div className="mt-6 rounded-lg bg-white/10 p-3 text-white/90">
-        {/* กล่องแสดงข้อมูลผู้ใช้ (admin) */}
         <div className="flex items-center gap-2 font-semibold">
-          {/* แถวชื่อ admin + ไอคอน */}
-          <FiUser className="text-lg" /> {/* ไอคอนรูปคน จาก react-icons */}
+          <FiUser className="text-lg" />
           <span>Admin</span>
         </div>
       </div>
 
+      {/* ปุ่ม Log out อยู่ด้านล่าง ใช้ออกจากระบบ Admin */}
       <button
-        onClick={onLogout} // เมื่อคลิกให้เรียก callback log out
+        onClick={onLogout}
         className="mt-6 w-full rounded-lg bg-white/10 px-4 py-2 font-semibold text-white hover:bg-white/20"
       >
-        Log out {/* ข้อความบนปุ่มออกจากระบบ */}
+        Log out
       </button>
     </aside>
   );
