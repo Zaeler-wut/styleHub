@@ -1,144 +1,208 @@
 // src/App.tsx
-import React, { useEffect, useMemo, useState } from "react"; // นำเข้า React hooks ที่ต้องใช้
-import { Routes, Route, useLocation } from "react-router-dom"; // นำเข้าคอมโพเนนต์และ hook สำหรับ routing
+import React, { useEffect, useMemo, useState } from "react"; // ใช้จัดการ state, memo และ side-effect
+import { Routes, Route, useLocation } from "react-router-dom"; // ใช้กำหนดเส้นทางของหน้า (Routing)
 
-import Navbar from "./components/Navbar"; // แถบนำทางด้านบนของหน้า
-import HomePage from "./pages/HomePage"; // หน้าแรกสำหรับผู้ใช้ทั่วไป
-import ProductPage from "./pages/ProductPage"; // หน้าแสดงรายการ/รายละเอียดสินค้า
-import FavoritesPage from "./pages/FavoritePage"; // หน้าแสดงสินค้าที่ถูกใจ
+import Navbar from "./components/Navbar"; // แถบนำทางด้านบน (แสดงเฉพาะหน้า user)
+import HomePage from "./pages/HomePage"; // หน้า Home สำหรับผู้ใช้ทั่วไป
+import ProductPage from "./pages/ProductPage"; // หน้าแสดงสินค้าตามหมวด / ทั้งหมด
+import FavoritesPage from "./pages/FavoritePage"; // ✅ แก้ชื่อ import ให้ตรงกับไฟล์ FavoritesPage.tsx
 import LoginPage from "./pages/LoginPage"; // หน้าเข้าสู่ระบบ
 import RegisterPage from "./pages/RegisterPage"; // หน้าสมัครสมาชิก
-import AdminPage from "./pages/AdminPage"; // หน้าแอดมินจัดการสินค้า/หมวดหมู่
+import AdminPage from "./pages/AdminPage"; // หน้าแอดมินจัดการสินค้าและหมวดหมู่
 
 import productsSeed from "./data/products.json"; // ข้อมูลสินค้าเริ่มต้นจากไฟล์ JSON
 import categoriesSeed from "./data/categorys.json"; // ข้อมูลหมวดหมู่เริ่มต้นจากไฟล์ JSON
-import { type Product } from "./types/product"; // type ของสินค้า
-import { type Category } from "./types/category"; // type ของหมวดหมู่
+import { type Product } from "./types/product"; // type กลางของสินค้า
+import { type Category } from "./types/category"; // type กลางของหมวดหมู่
 import { loadProducts, saveProducts } from "./services/storage"; // ฟังก์ชันโหลด/บันทึกสินค้าใน localStorage
 import { loadCategories, saveCategories } from "./services/categoryStorage"; // ฟังก์ชันโหลด/บันทึกหมวดหมู่ใน localStorage
 
-import "./App.css"; // นำเข้า stylesheet หลักของแอป
+import "./App.css"; // สไตล์หลักของแอป
 
-const FALLBACK_CAT_ID = "uncategorized"; // id หมวดหมู่สำรองใช้เมื่ออ้างอิง category ที่ไม่มีอยู่
-const SEED_FLAG_KEY = "catalog_seeded_v1"; // key ใน localStorage ไว้เช็คว่าเคย seed ข้อมูลแล้วหรือยัง
+const FALLBACK_CAT_ID = "uncategorized"; // หมวดสำรอง กรณีสินค้ามี category ที่ไม่มีอยู่จริง
+const SEED_FLAG_KEY = "catalog_seeded_v1"; // key ใช้เช็กว่าเคย seed ข้อมูลลง localStorage แล้วหรือยัง
 
-function App() { // คอมโพเนนต์หลักของแอปพลิเคชัน
-  const location = useLocation(); // ใช้ hook เพื่อตรวจ path ปัจจุบันจาก react-router
-  const isAdminRoute = location.pathname.startsWith("/admin"); // เช็คว่าตอนนี้อยู่ใน route ของ admin หรือไม่
+function App() {
+  // อ่าน path ปัจจุบันจาก react-router เพื่อตรวจว่าอยู่ใน /admin หรือไม่
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin"); // ถ้าเป็น /admin หรือ /admin/... → true
 
-  // ---------- เตรียม seed จากไฟล์ .json ----------
-  const seedCategories: Category[] = useMemo(() => { // ใช้ useMemo สร้างรายการหมวดหมู่จาก JSON เพียงครั้งเดียว
-    const map = new Map<string, Category>(); // ใช้ Map เพื่อรวมหมวดหมู่ตาม id และกันซ้ำ
-    (categoriesSeed as Array<{ id?: string; name?: string; image?: string }>).forEach((raw) => { // loop ข้อมูลหมวดหมู่ดิบจากไฟล์ JSON
-      const id = (raw.id || "").trim(); // ดึง id ออกมาและตัดช่องว่าง
-      if (!id) return; // ถ้าไม่มี id ให้ข้าม
-      const prev = map.get(id); // ดูว่ามีหมวดหมู่ id นี้อยู่ใน map แล้วหรือยัง
-      map.set(id, { // บันทึก/อัปเดตหมวดหมู่ลงใน map
-        id, // กำหนด id ให้ category
-        name: prev?.name || raw.name?.trim() || undefined, // ถ้ามี name เดิมใช้ก่อน ไม่มีก็ใช้จาก raw
-        image: prev?.image || raw.image?.trim() || undefined, // ถ้ามี image เดิมใช้ก่อน ไม่มีก็ใช้จาก raw
-      });
-    });
+  // --------------------------------------------------
+  // 1) เตรียมข้อมูล seed ของหมวดหมู่จากไฟล์ JSON
+  // --------------------------------------------------
+  const seedCategories: Category[] = useMemo(() => {
+    // ใช้ Map เพื่อกัน id ซ้ำ และเลือก name/image ที่ดีที่สุด
+    const map = new Map<string, Category>();
 
-    if (map.size === 0) map.set(FALLBACK_CAT_ID, { id: FALLBACK_CAT_ID }); // ถ้าไม่มีหมวดหมู่เลย ให้สร้างหมวดสำรองขึ้นมา 1 ตัว
-    return Array.from(map.values()); // แปลง Map กลับเป็น Array<Category> เพื่อใช้งานต่อ
-  }, []); // dependency ว่าง แปลว่าให้คำนวณครั้งเดียวตอน mount
+    (categoriesSeed as Array<{ id?: string; name?: string; image?: string }>).forEach(
+      (raw) => {
+        const id = (raw.id || "").trim();
+        if (!id) return; // ถ้าไม่มี id ให้ข้าม
 
-  const seedProducts: Product[] = useMemo(() => { // เตรียมรายการสินค้า seed จากไฟล์ JSON
-    return (productsSeed as any[]).map((p) => ({ // map แต่ละสินค้าในไฟล์ JSON เป็น object Product
-      id: Number(p.id), // แปลง id ให้เป็นตัวเลข
-      name: p.name, // ชื่อสินค้า
-      price: Number(p.price), // ราคาแปลงเป็น number
-      category: p.category || FALLBACK_CAT_ID, // ถ้าไม่มี category ให้ใช้หมวดสำรอง
-      storeLink: p.storeLink || "", // ลิงก์ไปยังหน้าร้าน ถ้าไม่มีให้เป็นสตริงว่าง
-      description: p.description || "", // รายละเอียดสินค้า ถ้าไม่มีให้เป็นสตริงว่าง
-      authentic: !!p.authentic, // แปลงค่าเป็น boolean ว่าสินค้าของแท้หรือไม่
-      images: Array.isArray(p.images) ? p.images : p.image ? [p.image] : [], // ถ้า images เป็น array ใช้เลย ถ้ามี image เดี่ยวให้ห่อเป็น array
-      isFavorite: !!p.isFavorite, // สถานะถูกใจสินค้า (รายการโปรด)
+        const prev = map.get(id);
+        map.set(id, {
+          id,
+          name: prev?.name || raw.name?.trim() || undefined,
+          image: prev?.image || raw.image?.trim() || undefined,
+        });
+      }
+    );
+
+    // ถ้าไม่มีหมวดเลย ให้สร้างหมวดสำรองไว้ 1 อัน
+    if (map.size === 0) map.set(FALLBACK_CAT_ID, { id: FALLBACK_CAT_ID });
+
+    return Array.from(map.values()); // แปลง Map กลับเป็น array<Category>
+  }, []);
+
+  // --------------------------------------------------
+  // 2) เตรียมข้อมูล seed ของสินค้า จากไฟล์ JSON
+  // --------------------------------------------------
+  const seedProducts: Product[] = useMemo(() => {
+    return (productsSeed as any[]).map((p) => ({
+      id: Number(p.id),
+      name: p.name,
+      price: Number(p.price),
+      category: p.category || FALLBACK_CAT_ID,
+      storeLink: p.storeLink || "",
+      description: p.description || "",
+      authentic: !!p.authentic,
+      images: Array.isArray(p.images)
+        ? p.images
+        : p.image
+        ? [p.image]
+        : [],
+      isFavorite: !!p.isFavorite,
     }));
-  }, []); // ใช้ useMemo เช่นกันให้สร้าง seed ครั้งเดียว
+  }, []);
 
-  // ---------- SEED ครั้งแรก: จาก .json → localStorage ----------
-  // เงื่อนไข: ถ้ายังไม่เคย seed (ไม่มี flag) จะเขียน seed ลง LS
-  useEffect(() => { // ใช้ effect ทำงานเมื่อ component mount
-    const seeded = localStorage.getItem(SEED_FLAG_KEY); // อ่านค่า flag จาก localStorage ว่าเคย seed แล้วหรือยัง
-    if (!seeded) { // ถ้ายังไม่เคย seed
-      saveCategories(seedCategories); // บันทึกหมวดหมู่เริ่มต้นลง localStorage
-      saveProducts(seedProducts); // บันทึกสินค้าเริ่มต้นลง localStorage
-      localStorage.setItem(SEED_FLAG_KEY, "1"); // ตั้ง flag ไว้ว่า seed แล้ว
+  // --------------------------------------------------
+  // 3) Seed ครั้งแรก: ถ้ายังไม่เคย seed → เขียน seed ลง localStorage
+  // --------------------------------------------------
+  useEffect(() => {
+    const seeded = localStorage.getItem(SEED_FLAG_KEY); // อ่าน flag จาก localStorage
+    if (!seeded) {
+      // ยังไม่เคย seed มาก่อน
+      saveCategories(seedCategories); // เซฟหมวดหมู่เริ่มต้น
+      saveProducts(seedProducts); // เซฟสินค้าเริ่มต้น
+      localStorage.setItem(SEED_FLAG_KEY, "1"); // ตั้ง flag ว่า seed แล้ว
     }
-  }, [seedCategories, seedProducts]); // ถ้า seedCategories หรือ seedProducts เปลี่ยนจะรัน effect ใหม่ (ปกติไม่เปลี่ยน)
+  }, [seedCategories, seedProducts]);
 
-  // ---------- โหลดจาก localStorage เป็น state กลาง ----------
-  // หมายเหตุ: load*() ใน services จะคืนค่า seed หาก LS ว่าง
-  const [categories, setCategories] = useState<Category[]>( // state สำหรับเก็บหมวดหมู่ทั้งหมด
-    () => loadCategories(seedCategories) // lazy init: โหลดจาก localStorage ถ้าไม่มีใช้ seedCategories
-  ); // ปิด useState ของ categories
-  const [products, setProducts] = useState<Product[]>( // state สำหรับเก็บรายการสินค้าทั้งหมด
-    () => loadProducts(seedProducts) // lazy init: โหลดจาก localStorage ถ้าไม่มีใช้ seedProducts
+  // --------------------------------------------------
+  // 4) โหลดข้อมูลจาก localStorage มาเป็น state กลางของทั้งแอป
+  // --------------------------------------------------
+  const [categories, setCategories] = useState<Category[]>(() =>
+    loadCategories(seedCategories) // ถ้า localStorage ว่าง ให้ใช้ seedCategories แทน
   );
 
-  // (ทางเลือก) enrich: ถ้าใน LS เคยมีแต่ยังไม่มี name/image ให้เติมจาก seed
-  useEffect(() => { // effect สำหรับ enrich ข้อมูลหมวดหมู่ที่ขาด name หรือ image
-    const seedMap = new Map(seedCategories.map((c) => [c.id.toLowerCase(), c])); // สร้าง map จาก seedCategories โดย normalize id เป็นตัวพิมพ์เล็ก
-    let changed = false; // ตัวแปรไว้เช็คว่ามีการเปลี่ยนข้อมูลหรือไม่
+  const [products, setProducts] = useState<Product[]>(() =>
+    loadProducts(seedProducts) // ถ้า localStorage ว่าง ให้ใช้ seedProducts แทน
+  );
 
-    const enriched = categories.map((c) => { // วน loop หมวดหมู่ที่โหลดมาใน state
-      const s = seedMap.get(c.id.toLowerCase()); // หาหมวดใน seed ที่ id ตรงกัน
-      const name = c.name ?? s?.name; // ถ้าใน state ไม่มี name ให้ใช้ชื่อจาก seed
-      const image = c.image ?? s?.image; // ถ้าใน state ไม่มี image ให้ใช้จาก seed
-      if (name !== c.name || image !== c.image) changed = true; // ถ้ามีอย่างใดอย่างหนึ่งเปลี่ยน แสดงว่าต้องอัปเดต
-      return { id: c.id, name, image }; // คืนค่าหมวดหมู่ที่เติมข้อมูลครบแล้ว
+  // --------------------------------------------------
+  // 5) enrich หมวดหมู่ที่โหลดจาก LS ให้มี name/image ครบ โดยอิงจาก seed
+  //    (รันครั้งเดียวตอน mount)
+  // --------------------------------------------------
+  useEffect(() => {
+    const seedMap = new Map(
+      seedCategories.map((c) => [c.id.toLowerCase(), c])
+    );
+    let changed = false;
+
+    const enriched = categories.map((c) => {
+      const s = seedMap.get(c.id.toLowerCase());
+      const name = c.name ?? s?.name;
+      const image = c.image ?? s?.image;
+      if (name !== c.name || image !== c.image) changed = true;
+      return { id: c.id, name, image };
     });
 
-    if (changed) setCategories(enriched); // ถ้ามีการเปลี่ยนจริง ค่อยอัปเดต state categories
-    // eslint-disable-next-line react-hooks/exhaustive-deps // ปิดคำเตือนของ ESLint ให้รัน effect นี้ครั้งเดียว
-  }, []); // enrich ครั้งเดียวพอตอน mount
+    if (changed) setCategories(enriched);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ใช้ครั้งเดียวตอนเปิดแอป
 
-  // ---------- Sync: เมื่อ categories เปลี่ยน → บันทึก LS และกันเคสว่าง ----------
-  useEffect(() => { // effect สำหรับ sync categories กับ localStorage
-    if (categories.length === 0) { // ถ้าตอนนี้ไม่มีหมวดหมู่เลย
-      setCategories([{ id: FALLBACK_CAT_ID }]); // ตั้งค่าหมวดสำรองกลับเข้าไปอย่างน้อย 1 ตัว
-      return; // ออกจาก effect ไม่ต้อง save ต่อ
+  // --------------------------------------------------
+  // 6) Sync: ถ้า categories เปลี่ยน → เซฟกลับ localStorage
+  //    และกันกรณี categories ว่าง ให้ใส่ FALLBACK อย่างน้อย 1 ตัว
+  // --------------------------------------------------
+  useEffect(() => {
+    if (categories.length === 0) {
+      setCategories([{ id: FALLBACK_CAT_ID }]);
+      return;
     }
-    saveCategories(categories); // บันทึกหมวดหมู่ล่าสุดลง localStorage
-  }, [categories]); // รัน effect เมื่อ categories เปลี่ยน
+    saveCategories(categories);
+  }, [categories]);
 
-  // ---------- Sync: เมื่อ products หรือ categories เปลี่ยน → จัดการ referential & save ----------
-  useEffect(() => { // effect ใช้จัดการความสัมพันธ์สินค้าและหมวดหมู่ แล้ว save ลง localStorage
-    const valid = new Set(categories.map((c) => c.id)); // สร้าง Set ของ id หมวดหมู่ที่มีอยู่จริง
-    const fixed = products.map((p) => // วนสินค้าทุกรายการเพื่อตรวจสอบ category
-      valid.has(p.category) ? p : { ...p, category: FALLBACK_CAT_ID } // ถ้า category ไม่อยู่ใน valid ให้เปลี่ยนเป็น FALLBACK
+  // --------------------------------------------------
+  // 7) Sync: ถ้า products หรือ categories เปลี่ยน → ดูว่า category ของสินค้าแต่ละตัว
+  //    ยังอ้างถึงหมวดที่มีอยู่จริงไหม ถ้าไม่ → ย้ายไป FALLBACK แล้วเซฟ
+  // --------------------------------------------------
+  useEffect(() => {
+    const valid = new Set(categories.map((c) => c.id)); // set ของ id หมวดหมู่ทั้งหมด
+
+    const fixed = products.map((p) =>
+      valid.has(p.category) ? p : { ...p, category: FALLBACK_CAT_ID }
     );
-    saveProducts(fixed); // บันทึกรายการสินค้า (ที่ปรับ category แล้วถ้าจำเป็น) ลง localStorage
-  }, [products, categories]); // รัน effect เมื่อ products หรือ categories เปลี่ยน
 
-  // ---------- props กลางส่งลงทุกหน้า ----------
-  const catalogProps = { products, setProducts, categories, setCategories }; // รวม props ที่ใช้ร่วมกันในหลายหน้า
+    saveProducts(fixed); // บันทึกลง localStorage
+  }, [products, categories]);
 
-  return ( // คืนค่า JSX หลักของแอป
-    <div className="min-h-dvh w-full"> {/* คอนเทนเนอร์หลัก ความสูงอย่างน้อยเท่ากับหน้าจอ */}
-      {!isAdminRoute && <Navbar />} {/* ถ้าไม่ใช่หน้า /admin ให้แสดง Navbar ด้านบน */}
+  // --------------------------------------------------
+  // 8) เตรียมชุด props กลางที่ใช้ส่งลงไปแต่ละหน้า
+  // --------------------------------------------------
 
-      <main className={isAdminRoute ? "min-h-dvh" : "min-h-[calc(100dvh-64px)]"}> {/* พื้นที่หลักของเนื้อหา ปรับความสูงตามว่ามี Navbar หรือไม่ */}
-        <Routes> {/* กำหนดเส้นทาง (routes) ทั้งหมดของแอป */}
-          {/* ผู้ใช้ */}
-          <Route path="/" element={<HomePage {...catalogProps} />} /> {/* เส้นทางหน้าแรก แสดงสินค้า/หมวดหมู่ภาพรวม */}
-          <Route path="/products" element={<ProductPage {...catalogProps} />} /> {/* หน้าแสดงรายการสินค้าทั้งหมด */}
-          <Route path="/products/:id" element={<ProductPage {...catalogProps} />} /> {/* หน้าแสดงรายละเอียดสินค้าตาม id ใน URL */}
-          <Route path="/favorites" element={<FavoritesPage {...catalogProps} />} /> {/* หน้าแสดงสินค้าที่ผู้ใช้กดถูกใจ */}
+  // หน้า user (Home / Product / Favorites) ต้องใช้แค่ products + categories
+  const userCatalogProps = { products, categories };
 
-          {/* auth */}
-          <Route path="/login" element={<LoginPage />} /> {/* หน้าเข้าสู่ระบบ */}
-          <Route path="/register" element={<RegisterPage />} /> {/* หน้าสมัครสมาชิก */}
+  // หน้า admin ต้องใช้ทั้งข้อมูล + setter เพื่อให้แก้ไข state ได้
+  const adminCatalogProps = { products, setProducts, categories, setCategories };
 
-          {/* แอดมิน */}
-          <Route path="/admin" element={<AdminPage {...catalogProps} />} /> {/* หน้า admin สำหรับจัดการสินค้าและหมวดหมู่ */}
-          {/* ถ้ามีซับเพจในแอดมิน: <Route path="/admin/*" element={<AdminPage {...catalogProps} />} /> */} {/* ตัวอย่างสำหรับรองรับเส้นทางย่อยใน /admin */}
+  // --------------------------------------------------
+  // 9) ส่วนแสดงผลรวมของแอป (รวม Navbar + Routes)
+  // --------------------------------------------------
+  return (
+    <div className="min-h-dvh w-full">
+      {/* แสดง Navbar เฉพาะหน้าที่ไม่ใช่ /admin */}
+      {!isAdminRoute && <Navbar />}
+
+      {/* main ปรับความสูงตามว่ามี Navbar หรือไม่ */}
+      <main
+        className={
+          isAdminRoute ? "min-h-dvh" : "min-h-[calc(100dvh-64px)]"
+        }
+      >
+        <Routes>
+          {/* กลุ่มเส้นทางสำหรับผู้ใช้ทั่วไป */}
+          <Route path="/" element={<HomePage {...userCatalogProps} />} />
+          <Route
+            path="/products"
+            element={<ProductPage {...userCatalogProps} />}
+          />
+          <Route
+            path="/products/:id"
+            element={<ProductPage {...userCatalogProps} />}
+          />
+          <Route
+            path="/favorites"
+            element={<FavoritesPage {...userCatalogProps} />}
+          />
+
+          {/* เส้นทางเกี่ยวกับการเข้าสู่ระบบ/สมัครสมาชิก */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* เส้นทางสำหรับแอดมินจัดการข้อมูล */}
+          <Route
+            path="/admin"
+            element={<AdminPage {...adminCatalogProps} />}
+          />
+          {/* ถ้าต้องรองรับ path ย่อยเช่น /admin/xxx:
+              <Route path="/admin/*" element={<AdminPage {...adminCatalogProps} />} />
+          */}
         </Routes>
       </main>
     </div>
   );
-} 
+}
 
 export default App;

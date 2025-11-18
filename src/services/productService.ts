@@ -11,7 +11,7 @@ const STORAGE_KEY = 'products_data'; // key สำหรับ localStorage
 
 const loadProducts = (): Product[] => {          // โหลดสินค้า
     const savedData = localStorage.getItem(STORAGE_KEY); // ดึงข้อมูลที่เคยบันทึก
-    if (savedData) return JSON.parse(savedData);         // ถ้ามี → ใช้ข้อมูลที่เก็บไว้
+    if (savedData) return JSON.parse(savedData);         // ถ้ามี ใช้ข้อมูลที่เก็บไว้
     return [...productsData];                            // ถ้าไม่มีก็ใช้ seed จากไฟล์
 };
 

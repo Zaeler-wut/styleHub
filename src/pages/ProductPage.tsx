@@ -1,196 +1,255 @@
 // src/pages/ProductPage.tsx
-import React, { useEffect, useMemo, useState } from "react"; // นำเข้า React และ hooks ที่ใช้: useEffect/useMemo/useState
-import { useParams } from "react-router-dom"; // ใช้ดึงพารามิเตอร์จาก URL เช่น /products/:id
+import React, { useEffect, useMemo, useState } from "react"; // ใช้ hook หลักในการจัดการ state, side-effect และคำนวณค่าที่สามารถ cache ได้
+import { useParams } from "react-router-dom"; // ใช้ดึงพารามิเตอร์ id ของหมวดหมู่จาก URL เช่น /products/:id
 
-import CategorySidebar from "../components/CategorySidebar"; // แถบเมนูหมวดหมู่ด้านซ้าย
-import ProductCard, { type ProductCardProps } from "../components/ProductCard"; // การ์ดแสดงสินค้า + type ของ props การ์ด
+import CategorySidebar from "../components/CategorySidebar"; // แถบหมวดหมู่ด้านซ้ายมือ
+import ProductCard, { type ProductCardProps } from "../components/ProductCard"; // การ์ดแสดงสินค้าแต่ละชิ้น
 
-import productsSeed from "../data/products.json"; // สินค้าเริ่มต้นจากไฟล์ JSON (ใช้เป็น fallback)
-import categoriesSeed from "../data/categorys.json"; // หมวดหมู่เริ่มต้นจากไฟล์ JSON (ใช้เป็น fallback)
+import productsSeed from "../data/products.json"; // ข้อมูลสินค้าตั้งต้นจากไฟล์ JSON
+import categoriesSeed from "../data/categorys.json"; // ข้อมูลหมวดหมู่ตั้งต้นจากไฟล์ JSON
 
-import { type Product } from "../types/product"; // type ข้อมูลสินค้า
-import { type Category } from "../types/category"; // type ข้อมูลหมวดหมู่
-import { loadProducts } from "../services/storage"; // ฟังก์ชันโหลดสินค้า (อ่านจาก localStorage + seed)
-import { loadCategories } from "../services/categoryStorage"; // ฟังก์ชันโหลดหมวดหมู่ (อ่านจาก localStorage + seed)
+import { type Product } from "../types/product"; // รูปแบบข้อมูลของสินค้า
+import { type Category } from "../types/category"; // รูปแบบข้อมูลของหมวดหมู่
+import { loadProducts } from "../services/storage"; // ฟังก์ชันอ่านข้อมูลสินค้า (รวม localStorage + seed)
+import { loadCategories } from "../services/categoryStorage"; // ฟังก์ชันอ่านข้อมูลหมวดหมู่ (รวม localStorage + seed)
 
-type Props = { // ชนิดของ props ที่หน้า ProductPage จะรับ
-  products?: Product[]; // รายการสินค้าแบบสดจาก App (ถ้ามี)
-  categories?: Category[]; // รายการหมวดหมู่แบบสดจาก App (ถ้ามี)
-}; // ปิด type Props
+type Props = {
+  products?: Product[];    // ถ้าหน้า App ส่งสินค้ามาเป็น props จะใช้ชุดนั้นเป็นหลัก
+  categories?: Category[]; // ถ้าหน้า App ส่งหมวดหมู่มาเป็น props จะใช้ชุดนั้นเป็นหลัก
+};
 
-/** normalize ไทย + ลบวรรณยุกต์/อักขระล่องหน/วรรคตอน แล้ว trim */ // คอมเมนต์อธิบายชุดฟังก์ชัน normalize string ภาษาไทย
-const stripMarks = (s: string) => // ลบวรรณยุกต์/สระ/เครื่องหมายประกอบออกจาก string
+// ===================== ฟังก์ชันช่วย normalize ข้อความ (โดยเฉพาะภาษาไทย) =====================
+// เป้าหมาย: ทำให้การเปรียบเทียบ category / การค้นหา “ทนต่อ” วรรณยุกต์ ช่องว่าง หรือสัญลักษณ์ต่าง ๆ
+
+// ลบวรรณยุกต์/สระ/เครื่องหมายประกอบออกจากข้อความ (ทั้งอังกฤษและไทย)
+const stripMarks = (s: string) =>
   s
-    .normalize("NFD") // แยกตัวอักษร+วรรณยุกต์ออกจากกัน
-    .replace(/[\u0300-\u036f\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g, ""); // ลบช่วงโค้ดวรรณยุกต์ทั้งอังกฤษ+ไทย
-const stripInvisible = (s: string) => s.replace(/[\u200B-\u200D\uFEFF]/g, ""); // ลบอักขระล่องหน เช่น zero-width space
-const stripPunct = (s: string) => s.replace(/[^\p{L}\p{N}\s]/gu, ""); // ลบวรรคตอน/สัญลักษณ์ คงไว้เฉพาะ ตัวอักษร/ตัวเลข/ช่องว่าง
-const sNorm = (s?: string) => // ฟังก์ชัน normalize หลัก
-  stripPunct(stripInvisible(stripMarks((s ?? "").toLowerCase()))) // แปลงเป็นตัวเล็ก → ลบวรรณยุกต์ → ลบตัวล่องหน → ลบวรรคตอน
-    .replace(/\s+/g, " ") // รวมช่องว่างหลายช่องให้เหลือช่องเดียว
-    .trim(); // ตัดช่องว่างหัวท้ายออก
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g, "");
 
-const ProductPage: React.FC<Props> = ({ products, categories }) => { // ประกาศคอมโพเนนต์ ProductPage แบบ React.FC พร้อม props
-  const { id: selectedKeyRaw } = useParams<{ id?: string }>(); // ดึงค่า id จาก URL (เช่น /products/:id)
-  const selectedKey = sNorm(selectedKeyRaw); // นำ id ดิบมา normalize เป็น key สำหรับ filter category
+// ลบอักขระล่องหน เช่น zero-width space ที่อาจหลงมาในข้อความ
+const stripInvisible = (s: string) => s.replace(/[\u200B-\u200D\uFEFF]/g, "");
 
-  // ---------- หมวดหมู่: props > LS > JSON ----------
-  const catObjects: Array<{ id: string; name?: string }> = useMemo(() => { // คำนวณ list หมวดหมู่ที่ใช้ใน sidebar
-    const buildMap = (arr: Array<{ id?: string; name?: string }>) => { // helper function สร้าง map id → name จาก array
-      const map = new Map<string, { id: string; name?: string }>(); // Map เก็บ id ที่ normalize แล้ว
-      for (const c of arr || []) { // วนทุก element ใน array
-        const id = sNorm(String(c?.id || "")); // normalize id ให้เป็นรูปแบบเดียวกัน
-        if (!id) continue; // ถ้า id ว่างข้าม
-        const name = (c?.name || "").trim() || c?.id || id; // ถ้า name ว่างให้ fallback เป็น id เดิม หรือ id normalize
-        if (!map.has(id)) map.set(id, { id, name }); // ถ้ายังไม่มี key นี้ใน map ให้เพิ่มเข้าไป
+// ลบสัญลักษณ์และวรรคตอนออก เหลือเฉพาะตัวอักษร ตัวเลข และช่องว่าง
+const stripPunct = (s: string) => s.replace(/[^\p{L}\p{N}\s]/gu, "");
+
+// ฟังก์ชัน normalize หลัก: ตัวเล็ก + ลบวรรณยุกต์ + ลบตัวล่องหน + ลบสัญลักษณ์ + จัดช่องว่าง
+const sNorm = (s?: string) =>
+  stripPunct(stripInvisible(stripMarks((s ?? "").toLowerCase())))
+    .replace(/\s+/g, " ")
+    .trim();
+
+// ===================== คอมโพเนนต์หลักหน้าแสดงสินค้า =====================
+
+const ProductPage: React.FC<Props> = ({ products, categories }) => {
+  // ดึง id ของหมวดหมู่จาก URL เช่น /products/shoes → selectedKeyRaw = "shoes"
+  const { id: selectedKeyRaw } = useParams<{ id?: string }>();
+
+  // แปลง id จาก URL ให้เป็นรูปแบบ normalize เพื่อเอาไว้ใช้เปรียบเทียบกับ category ในสินค้า
+  const selectedKey = sNorm(selectedKeyRaw);
+
+  // ===================== ส่วนหมวดหมู่: เลือกใช้จาก props > localStorage > ไฟล์ JSON =====================
+  const catObjects: Array<{ id: string; name?: string }> = useMemo(() => {
+    // ฟังก์ชันช่วย: รับ array ของหมวดหมู่ แล้วรวมเป็น map กัน id ซ้ำ โดยใช้ id แบบ normalize เป็น key
+    const buildMap = (arr: Array<{ id?: string; name?: string }>) => {
+      const map = new Map<string, { id: string; name?: string }>();
+
+      for (const c of arr || []) {
+        const id = sNorm(String(c?.id || "")); // normalize id หมวดหมู่
+        if (!id) continue; // ถ้าไม่มี id ให้ข้าม
+
+        // ถ้าไม่มี name ให้ fallback เป็น id เดิม หรือค่าที่ normalize แล้ว
+        const name = (c?.name || "").trim() || c?.id || id;
+
+        if (!map.has(id)) {
+          map.set(id, { id, name }); // เก็บเฉพาะตัวแรกของ id นั้น ๆ เพื่อกันข้อมูลซ้ำ
+        }
       }
-      return Array.from(map.values()); // แปลงจาก Map กลับเป็น array ของ object {id,name}
+
+      return Array.from(map.values()); // คืนเป็น array เพื่อนำไปแสดงใน sidebar
     };
 
-    if (Array.isArray(categories) && categories.length > 0) { // ถ้ามี categories จาก props (สดจาก App)
-      return buildMap(categories as any); // ใช้ข้อมูลจาก props เป็นหลัก
+    // กรณีที่ 1: ถ้ามี categories จาก props (ข้อมูลสดจาก App) → ใช้เป็นแหล่งข้อมูลหลัก
+    if (Array.isArray(categories) && categories.length > 0) {
+      return buildMap(categories as any);
     }
 
-    const ls = loadCategories( // ถ้าไม่มี props ให้พยายามโหลดจาก localStorage ผ่าน loadCategories
-      (categoriesSeed as any[]).map((c) => ({ // seed หมวดหมู่เบื้องต้นส่งเข้าไปให้ loadCategories
-        id: String(c?.id || "").trim(), // id ตัดช่องว่าง
-        name: String(c?.name || "").trim() || undefined, // name ถ้าไม่มีให้ undefined
+    // กรณีที่ 2: ถ้าไม่มี props → พยายามโหลดจาก localStorage โดยใช้ seed จากไฟล์ JSON เป็นค่าเริ่มต้น
+    const ls = loadCategories(
+      (categoriesSeed as any[]).map((c) => ({
+        id: String(c?.id || "").trim(),
+        name: String(c?.name || "").trim() || undefined,
       }))
     );
-    if (ls.length > 0) return buildMap(ls as any); // ถ้าโหลดจาก LS แล้วมีข้อมูลให้ใช้ข้อมูลนั้น
+    if (ls.length > 0) return buildMap(ls as any);
 
-    return buildMap(categoriesSeed as any[]); // ถ้า props และ LS ไม่ได้ข้อมูล ให้ fallback เป็นไฟล์ JSON เดิม
-  }, [categories]); // คำนวณใหม่เมื่อ categories จาก props เปลี่ยน
+    // กรณีที่ 3: ถ้า localStorage ยังว่าง → ใช้ข้อมูลจากไฟล์ JSON โดยตรง
+    return buildMap(categoriesSeed as any[]);
+  }, [categories]);
 
-  // ---------- สินค้า: props > LS > JSON ----------
-  const allProducts: ProductCardProps[] = useMemo(() => { // แปลงรายการสินค้าให้เป็นรูปแบบที่ ProductCard ใช้ได้
-    const toCard = (arr: any[]): ProductCardProps[] => // helper function แปลง array ของสินค้าเป็น ProductCardProps[]
+  // ===================== ส่วนสินค้า: เลือกใช้จาก props > localStorage > ไฟล์ JSON =====================
+  const allProducts: ProductCardProps[] = useMemo(() => {
+    // ฟังก์ชันช่วย: แปลง array สินค้า “ดิบ” ให้กลายเป็นรูปแบบที่ ProductCard ใช้ได้
+    const toCard = (arr: any[]): ProductCardProps[] =>
       arr
-        .filter(Boolean) // กรองค่าที่เป็น null/undefined ออก
-        .map((p: any) => ({ // map แต่ละ record ให้กลายเป็น ProductCardProps
-          id: Number(p.id), // แปลง id เป็น number
-          name: String(p.name ?? ""), // ชื่อสินค้า
-          price: Number(p.price ?? 0), // ราคา เลขจำนวนเต็มหรือ 0
-          category: sNorm(String(p.category || "")), // category normalize เป็น key ที่ใช้เทียบ
-          images: Array.isArray(p.images) ? p.images : p.image ? [p.image] : [], // ถ้า images เป็น array ใช้เลย ไม่ก็ลองดู p.image เดี่ยว
-          storeLink: p.storeLink || "", // ลิงก์ร้านค้า ถ้าไม่มีให้ค่าว่าง
-          description: p.description || "", // รายละเอียด ถ้าไม่มีให้ค่าว่าง
-          authentic: !!p.authentic, // แปลงให้ชัดเจนว่าเป็น boolean
+        .filter(Boolean)
+        .map((p: any) => ({
+          id: Number(p.id),
+          name: String(p.name ?? ""),
+          price: Number(p.price ?? 0),
+          // เก็บ category ในรูปแบบ normalize เพื่อใช้เทียบกับ selectedKey ได้แม่นยำ
+          category: sNorm(String(p.category || "")),
+          // รองรับทั้ง products ที่เก็บรูปเป็น images[] หรือ image เดี่ยว
+          images: Array.isArray(p.images)
+            ? p.images
+            : p.image
+            ? [p.image]
+            : [],
+          storeLink: p.storeLink || "",
+          description: p.description || "",
+          authentic: !!p.authentic,
         }))
-        .filter((p) => !!p.id); // กรองสินค้าไม่มี id ออก (กันข้อมูลเสีย)
+        // กันข้อมูลเสีย: ตัดสินค้าที่ไม่มี id (หรือแปลงไม่ได้) ทิ้ง
+        .filter((p) => !!p.id);
 
-    if (Array.isArray(products) && products.length > 0) { // ถ้าส่งสินค้าแบบสดจาก App มาให้
-      return toCard(products as any[]); // ใช้สินค้าจาก props เป็นหลัก
+    // กรณีที่ 1: ถ้ามีสินค้าแบบสดจาก App ส่งมาทาง props → ใช้เป็นหลัก
+    if (Array.isArray(products) && products.length > 0) {
+      return toCard(products as any[]);
     }
 
-    const ls = loadProducts( // ถ้าไม่มี props ให้โหลดจาก localStorage ผ่าน loadProducts
-      (productsSeed as any[]).map((p) => ({ // ส่ง seed (productsSeed) เข้าไปเป็นค่า default
-        id: Number(p.id), // id
-        name: String(p.name ?? ""), // name
-        price: Number(p.price ?? 0), // price
-        category: String(p.category || ""), // category ยังไม่ normalize ตรงนี้
-        storeLink: p.storeLink || "", // storeLink
-        description: p.description || "", // description
-        authentic: !!p.authentic, // authentic
-        images: Array.isArray(p.images) ? p.images : p.image ? [p.image] : [], // images
-        isFavorite: !!p.isFavorite, // isFavorite (เก็บใน storage เผื่อหน้าที่สนใจ)
+    // กรณีที่ 2: ถ้าไม่มี props → โหลดจาก localStorage โดยใช้ productsSeed เป็นค่าเริ่มต้น
+    const ls = loadProducts(
+      (productsSeed as any[]).map((p) => ({
+        id: Number(p.id),
+        name: String(p.name ?? ""),
+        price: Number(p.price ?? 0),
+        category: String(p.category || ""),
+        storeLink: p.storeLink || "",
+        description: p.description || "",
+        authentic: !!p.authentic,
+        images: Array.isArray(p.images)
+          ? p.images
+          : p.image
+          ? [p.image]
+          : [],
+        isFavorite: !!p.isFavorite,
       }))
     );
-    if (ls.length > 0) return toCard(ls as any[]); // ถ้าโหลดจาก LS แล้วได้ข้อมูลให้ใช้ข้อมูลนั้น
+    if (ls.length > 0) return toCard(ls as any[]);
 
-    return toCard(productsSeed as any[]); // ถ้าไม่มีทั้ง props และ LS → fallback เป็นสินค้าจาก JSON อย่างเดียว
-  }, [products]); // คำนวณใหม่เมื่อ products จาก props เปลี่ยน
+    // กรณีที่ 3: ถ้า localStorage ว่าง → ใช้ข้อมูลจากไฟล์ JSON เป็นค่า fallback
+    return toCard(productsSeed as any[]);
+  }, [products]);
 
-  // ---------- ผู้ใช้ & รายการโปรด ----------
-  const [username, setUsername] = useState<string | null>(null); // state เก็บชื่อ user ปัจจุบัน (จาก localStorage)
-  const [favIds, setFavIds] = useState<number[]>([]); // state เก็บรายการ id ของสินค้าที่ถูกกด favorite โดย user นี้
-  const favKey = username ? `fav:${username}` : null; // key ใน localStorage สำหรับ favorite ของ user นี้ เช่น fav:admin
+  // ===================== ส่วนจัดการผู้ใช้และ “รายการโปรด (favorite)” =====================
+  const [username, setUsername] = useState<string | null>(null); // เก็บชื่อผู้ใช้ที่ล็อกอินอยู่ (อ่านจาก localStorage)
+  const [favIds, setFavIds] = useState<number[]>([]); // เก็บ list ของ id สินค้าที่ผู้ใช้นี้กด favorite ไว้
+  const favKey = username ? `fav:${username}` : null; // ใช้ key ใน localStorage แยกตาม username เช่น fav:admin
 
-  useEffect(() => { // โหลดข้อมูล user จาก localStorage ครั้งแรก
+  // ตอนเข้า page ครั้งแรก: ลองอ่าน session user จาก localStorage
+  useEffect(() => {
     try {
-      const s = JSON.parse(localStorage.getItem("user") || "null"); // อ่านค่า "user" จาก localStorage
-      setUsername(s?.name ?? null); // ถ้ามี name ให้ใช้ ไม่มีก็ตั้งเป็น null
+      const s = JSON.parse(localStorage.getItem("user") || "null");
+      setUsername(s?.name ?? null);
     } catch {
-      setUsername(null); // ถ้า parse พลาดให้ใช้ null
+      setUsername(null);
     }
   }, []);
 
-  useEffect(() => { // โหลดรายการ favIds ตาม user (favKey)
-    if (!favKey) { // ถ้ายังไม่มี favKey (ยังไม่รู้ชื่อ user)
-      setFavIds([]); // เคลียร์ favIds ให้ว่าง
-      return; // หยุดทำงาน
+  // เมื่อรู้ favKey (รู้ว่าเป็น user ไหน) → โหลดรายการ favorite ของ user คนนั้น
+  useEffect(() => {
+    if (!favKey) {
+      setFavIds([]); // ถ้าไม่มี favKey แสดงว่ายังไม่มี user → เคลียร์ให้ว่าง
+      return;
     }
     try {
-      const raw = JSON.parse(localStorage.getItem(favKey) || "[]"); // อ่าน favorite จาก localStorage โดยใช้ favKey
-      setFavIds(Array.isArray(raw) ? raw : []); // ถ้าเป็น array ให้ใช้ ไม่งั้นให้ []
+      const raw = JSON.parse(localStorage.getItem(favKey) || "[]");
+      setFavIds(Array.isArray(raw) ? raw : []);
     } catch {
-      setFavIds([]); // ถ้า parse พลาดให้ []
+      setFavIds([]);
     }
-  }, [favKey]); // รันใหม่เมื่อ favKey (เช่น username) เปลี่ยน
+  }, [favKey]);
 
-  // ---------- ค้นหาเฉพาะ "ชื่อสินค้า" ----------
-  const [q, setQ] = useState(""); // state สำหรับคำค้น (search) เฉพาะชื่อสินค้า
+  // ===================== ส่วนค้นหาชื่อสินค้า =====================
+  const [q, setQ] = useState(""); // state สำหรับเก็บข้อความค้นหาที่ผู้ใช้พิมพ์
 
-  // ---------- กรองตามหมวด + ค้นหาเฉพาะชื่อ ----------
-  const list = useMemo(() => { // useMemo เพื่อคำนวณรายการสินค้าที่จะแสดงใน grid
-    const base = !selectedKey // ถ้าไม่มีหมวดที่เลือก (เช่น /products เฉย ๆ)
-      ? allProducts // ใช้สินค้าทั้งหมด
-      : allProducts.filter((p) => p.category === selectedKey); // ถ้ามีหมวดที่เลือก ให้กรองเฉพาะสินค้าที่ category ตรงกับ selectedKey
+  // ===================== กรองสินค้า: ตามหมวดจาก URL + ตามคำค้นหา =====================
+  const list = useMemo(() => {
+    // ขั้นแรก: กรองตามหมวดหมู่ใน URL (selectedKey)
+    const base = !selectedKey
+      ? allProducts // ถ้า URL ไม่ระบุหมวด → ใช้สินค้าทั้งหมด
+      : allProducts.filter((p) => p.category === selectedKey); // ถ้าเลือกหมวด → เหลือเฉพาะสินค้าที่ category ตรงกัน
 
-    const qq = sNorm(q); // normalize ข้อความค้นหา
-    if (!qq) return base; // ถ้า search ว่าง ให้คืน base โดยไม่กรองเพิ่ม
+    // ขั้นต่อมา: กรองตามคำค้นหา q (เฉพาะชื่อสินค้า)
+    const qq = sNorm(q);
+    if (!qq) return base; // ถ้าไม่ได้พิมพ์คำค้นหา → ไม่ต้องกรองเพิ่ม
 
-    const tokens = qq.split(/\s+/).filter(Boolean); // แยกคำค้นด้วยช่องว่าง แล้วกรองช่องว่างออก (AND search)
-    return base.filter((p) => { // กรองสินค้าใน base ตามคำค้น
-      const nameNorm = sNorm(p.name); // normalize ชื่อสินค้าแต่ละตัว
-      return tokens.every((tk) => nameNorm.includes(tk)); // ทุก token ต้องถูกพบในชื่อสินค้า (AND)
+    // รองรับการค้นหาหลายคำ โดยใช้ AND (ทุกคำต้องพบในชื่อสินค้า)
+    const tokens = qq.split(/\s+/).filter(Boolean);
+    return base.filter((p) => {
+      const nameNorm = sNorm(p.name);
+      return tokens.every((tk) => nameNorm.includes(tk));
     });
-  }, [allProducts, selectedKey, q]); // คำนวณใหม่เมื่อรายการสินค้า, หมวดที่เลือก หรือคำค้นเปลี่ยน
+  }, [allProducts, selectedKey, q]);
 
-  return ( // เริ่ม JSX ของหน้า ProductPage
-    <div className="min-h-dvh w-full bg-gradient-to-b from-pink-200 via-purple-500 to-purple-900"> {/* พื้นหลังไล่สีทั้งหน้า */}
-      <section className="mx-auto grid max-w-[1200px] grid-cols-1 gap-6 px-6 py-10 md:py-16 md:grid-cols-[240px_1fr]"> {/* layout หลัก: mobile = 1 คอลัมน์, md+ = sidebar 240px + content */}
-        {/* Sidebar หมวดหมู่ */}
-        <CategorySidebar categories={catObjects} selectedKey={selectedKeyRaw} /> {/* ส่งรายการหมวดหมู่และ id ที่เลือก (จาก URL) ให้ sidebar แสดงออกมา */}
+  // ===================== ส่วนแสดงผล UI หลักของหน้า ProductPage =====================
+  return (
+    <div className="min-h-dvh w-full bg-gradient-to-b from-pink-200 via-purple-500 to-purple-900">
+      {/* พื้นหลังของหน้า products ใช้ไล่สีชมพู → ม่วง และให้สูงอย่างน้อยเท่าความสูงของหน้าจอ */}
 
-        <div className="flex flex-col gap-4"> {/* โซนฝั่งขวา: ช่องค้นหา + grid สินค้า */}
-          {/* ช่องค้นหาแบบ “ยาวเต็มแถว” */}
-          <div className="rounded-xl bg-white/90 p-3 shadow ring-1 ring-black/10"> {/* กล่องครอบ input ค้นหา */}
+      <section className="mx-auto grid max-w-[1200px] grid-cols-1 gap-6 px-6 py-10 md:py-16 md:grid-cols-[240px_1fr]">
+        {/* layout หลัก
+            - มือถือ: 1 คอลัมน์ (sidebar อยู่ด้านบน content)
+            - จอ md ขึ้นไป: แบ่ง 2 คอลัมน์ → ซ้าย 240px (sidebar), ขวาเป็นพื้นที่แสดงสินค้า */}
+
+        {/* ===== Sidebar หมวดหมู่ทางซ้าย ===== */}
+        <CategorySidebar
+          categories={catObjects}      // รายการหมวดหมู่ที่เตรียมไว้ (id + ชื่อ)
+          selectedKey={selectedKeyRaw} // ส่ง id จาก URL ไปให้ sidebar ใช้ไฮไลต์หัวข้อที่กำลังดูอยู่
+        />
+
+        {/* ===== พื้นที่ฝั่งขวา: ช่องค้นหา + กริดสินค้า ===== */}
+        <div className="flex flex-col gap-4">
+          {/* กล่องค้นหาชื่อสินค้า */}
+          <div className="rounded-xl bg-white/90 p-3 shadow ring-1 ring-black/10">
             <input
-              aria-label="ค้นหาชื่อสินค้า" // ป้ายสำหรับ screen reader
-              placeholder="ค้นหาชื่อสินค้า (เช่น รองเท้า, bag, watch...)" // ข้อความตัวอย่างบอกรูปแบบคำค้น
-              value={q} // ผูกกับ state คำค้น
-              onChange={(e) => setQ(e.target.value)} // เมื่อผู้ใช้พิมพ์ให้เปลี่ยนค่า q
-              className="w-full rounded-md border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-violet-300" // สไตล์ช่องค้นหา
+              aria-label="ค้นหาชื่อสินค้า"
+              placeholder="ค้นหาชื่อสินค้า"
+              value={q}
+              onChange={(e) => setQ(e.target.value)} // อัปเดต state คำค้นหาเมื่อผู้ใช้พิมพ์
+              className="w-full rounded-md border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-violet-300"
             />
           </div>
 
-          {/* สินค้า */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"> {/* กริดแสดงการ์ดสินค้า: 1 คอลัมน์บนมือถือ, 2/3 บนจอใหญ่ */}
-            {list.map((p) => ( // วนรายการสินค้าที่ผ่านการกรองแล้ว
+          {/* กริดการ์ดสินค้า */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {list.map((p) => (
               <ProductCard
-                key={p.id} // key ไม่ซ้ำต่อ React ใช้ id สินค้า
-                {...p} // กระจาย props พื้นฐานทั้งหมดของสินค้าให้ ProductCard
-                isFav={favIds.includes(p.id)} // บอกการ์ดว่าสินค้านี้เป็น favorite หรือไม่ (ตาม favIds)
-                onToggleFav={() => { // ฟังก์ชันสลับสถานะ favorite เมื่อคลิกหัวใจ
-                  if (!favKey) { // ถ้ายังไม่มี favKey แปลว่ายังไม่รู้ user
-                    window.location.href = "/login"; // ส่งไปหน้า login ก่อน
-                    return; // หยุดทำงาน
+                key={p.id}           // ใช้ id สินค้าเป็น key ให้ React
+                {...p}              // ส่งข้อมูลสินค้า (id, name, price, images, ฯลฯ) ให้การ์ดทีเดียว
+                isFav={favIds.includes(p.id)} // เช็กว่า id นี้อยู่ในรายการโปรดหรือไม่
+                onToggleFav={() => {
+                  // ฟังก์ชันเมื่อกดหัวใจ toggle favorite
+                  if (!favKey) {
+                    // ถ้ายังไม่รู้จะเก็บ favorite ให้ user ไหน → บังคับให้ไป login ก่อน
+                    window.location.href = "/login";
+                    return;
                   }
-                  setFavIds((prev) => { // อัปเดต state favIds
-                    const next = prev.includes(p.id) // ถ้า id นี้อยู่ใน list แล้ว
-                      ? prev.filter((x) => x !== p.id) // ให้เอาออก (unfavorite)
-                      : [...prev, p.id]; // ถ้าไม่มีให้เพิ่มเข้าไป (favorite)
-                    localStorage.setItem(favKey, JSON.stringify(next)); // เซฟรายการใหม่กลับไปใน localStorage
-                    return next; // คืนค่า state ใหม่
+                  setFavIds((prev) => {
+                    const next = prev.includes(p.id)
+                      ? prev.filter((x) => x !== p.id) // ถ้ามีอยู่แล้ว → ถอดออก
+                      : [...prev, p.id];               // ถ้ายังไม่มี → เพิ่มเข้าไป
+                    localStorage.setItem(favKey, JSON.stringify(next)); // เซฟรายการ favorite ใหม่ของ user นี้
+                    return next;
                   });
                 }}
               />
             ))}
 
-            {list.length === 0 && ( // ถ้าไม่มีสินค้าใดตรงกับเงื่อนไขกรอง+ค้นหา
-              <div className="col-span-full rounded-2xl bg-white/70 p-8 text-center text-black/70 shadow"> {/* กล่องแจ้งเตือนแสดงเต็มแถว */}
-                ไม่พบ “{q.trim()}” ในชื่อสินค้า {/* ข้อความแจ้งว่าไม่เจอผลลัพธ์ พร้อมแสดงคำที่ค้นหา */}
+            {/* กรณีกรองแล้วไม่พบสินค้าเลย */}
+            {list.length === 0 && (
+              <div className="col-span-full rounded-2xl bg-white/70 p-8 text-center text-black/70 shadow">
+                ไม่พบสินค้า
               </div>
             )}
           </div>
@@ -200,4 +259,4 @@ const ProductPage: React.FC<Props> = ({ products, categories }) => { // ปร�
   );
 };
 
-export default ProductPage; // export คอมโพเนนต์ ProductPage เป็น default ให้ไฟล์อื่นนำไปใช้
+export default ProductPage; // ส่งออกคอมโพเนนต์ให้ App นำไปใช้ใน route /products

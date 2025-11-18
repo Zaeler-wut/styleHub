@@ -1,4 +1,3 @@
-// Component นี้คือ Sidebar สำหรับหน้า Admin
 // ใช้เลือกแท็บ (Dashboard / Product / Category) และปุ่ม Log out
 import React, { useEffect } from "react";
 import {
@@ -15,11 +14,11 @@ type TabKey = "dashboard" | "product" | "category";
 
 /**
  * กำหนดรูปแบบ Props ที่ Component นี้ต้องการรับจากพาเรนต์
- * - open        : สถานะเปิด/ปิด sidebar (ใช้ควบคุมบนมือถือ)
- * - current     : แท็บที่ถูกเลือกอยู่ตอนนี้
+ * - open : สถานะเปิด/ปิด sidebar (ใช้ควบคุมบนมือถือ)
+ * - current : แท็บที่ถูกเลือกอยู่ตอนนี้
  * - onChangeTab : ฟังก์ชันที่ให้พาเรนต์รู้ว่าเราเปลี่ยนแท็บแล้ว
- * - onToggle    : ฟังก์ชันสำหรับสลับเปิด/ปิด sidebar
- * - onLogout    : ฟังก์ชันที่เรียกเมื่อกดปุ่ม Log out
+ * - onToggle : ฟังก์ชันสำหรับสลับเปิด/ปิด sidebar
+ * - onLogout : ฟังก์ชันที่เรียกเมื่อกดปุ่ม Log out
  */
 type Props = {
   open: boolean;

@@ -1,14 +1,23 @@
 // src/components/CategoryForm.tsx
-import React, { useEffect, useRef, useState } from "react"; // นำเข้า React และ hooks สำหรับจัดการ state, ref, side-effect
-import { type Category } from "../types/category"; // type Category สำหรับระบุรูปแบบข้อมูลหมวดหมู่
-import { uploadImageToCloudinary } from "../services/cloudinary"; // ฟังก์ชันอัปโหลดรูปไป Cloudinary
+// ฟอร์มสำหรับ “เพิ่ม / แก้ไขหมวดหมู่สินค้า”
+// ทำหน้าที่จัดการชื่อหมวด, id (slug), และรูปภาพ (อัปโหลดขึ้น Cloudinary)
 
+import React, { useEffect, useRef, useState } from "react";
+import { type Category } from "../types/category";
+import { uploadImageToCloudinary } from "../services/cloudinary";
+
+// กำหนดรูปแบบ props ที่ฟอร์มนี้รับจากภายนอก
+// - onAdd         : ใช้ตอนโหมดเพิ่มหมวดใหม่ ส่ง Category กลับให้พาเรนต์จัดการบันทึก
+// - initial       : ถ้ามีค่า แปลว่ากำลังแก้ไขหมวดเดิม (edit mode)
+// - onSubmitEdit  : ฟังก์ชันสำหรับบันทึกการแก้ไข (ใช้คู่กับ initial)
+// - onCancelEdit  : ฟังก์ชันสำหรับปุ่ม “ยกเลิกแก้ไข”
+// - existingIds   : รายการ id ของหมวดหมู่ที่มีอยู่แล้ว (ใช้สำหรับเช็คไม่ให้ id ซ้ำตอนเพิ่มใหม่)
 type Props = {
-  onAdd: (c: Category) => void;                 // ฟังก์ชันที่ถูกเรียกเมื่อเพิ่มหมวดหมู่ใหม่
-  initial?: Category | null;                   // ถ้ามีค่า แปลว่าอยู่ในโหมดแก้ไข (edit)
-  onSubmitEdit?: (c: Category) => void;        // ฟังก์ชันเรียกเมื่อบันทึกการแก้ไขหมวดหมู่
-  onCancelEdit?: () => void;                   // ฟังก์ชันเรียกเมื่อยกเลิกการแก้ไข
-  existingIds?: string[];                      // รายการ id หมวดหมู่ที่มีอยู่แล้ว (ไว้เช็คซ้ำตอนเพิ่มใหม่)
+  onAdd: (c: Category) => void;
+  initial?: Category | null;
+  onSubmitEdit?: (c: Category) => void;
+  onCancelEdit?: () => void;
+  existingIds?: string[];
 };
 
 export default function CategoryForm({
@@ -16,174 +25,248 @@ export default function CategoryForm({
   initial,
   onSubmitEdit,
   onCancelEdit,
-  existingIds = [],                            // ถ้าไม่ส่ง existingIds มาให้ใช้เป็น array ว่าง
+  existingIds = [],
 }: Props) {
-  const isEdit = !!initial && !!onSubmitEdit;  // ถ้ามี initial และ onSubmitEdit แสดงว่าอยู่โหมดแก้ไข
+  // ถ้ามีทั้ง initial และ onSubmitEdit แสดงว่าเป็นโหมดแก้ไข
+  const isEdit = !!initial && !!onSubmitEdit;
 
-  const [displayName, setDisplayName] = useState<string>(""); // ชื่อหมวดหมู่ที่ไว้แสดงผล
-  const [slug, setSlug] = useState<string>("");               // รหัสหมวด (id ที่จะใช้ในระบบ / URL)
-  const [slugEdited, setSlugEdited] = useState(false);        // flag บอกว่าผู้ใช้แก้ slug เองแล้วหรือยัง
+  // displayName  : ชื่อหมวดหมู่ที่เอาไว้แสดงบนหน้าเว็บ
+  // slug         : รหัสหมวดหมู่ (id ที่ใช้ในระบบ / URL)
+  // slugEdited   : ใช้เช็คว่าผู้ใช้เคยแก้ slug เองหรือยัง (ถ้าเคยแล้วจะไม่ auto-gen จากชื่ออีก)
+  const [displayName, setDisplayName] = useState<string>("");
+  const [slug, setSlug] = useState<string>("");
+  const [slugEdited, setSlugEdited] = useState(false);
 
-  const [image, setImage] = useState<string>("");             // URL รูปภาพหมวดหมู่หลังอัปโหลดสำเร็จ
+  // image        : เก็บ URL รูปหมวดหมู่ที่อัปโหลดสำเร็จแล้ว
+  const [image, setImage] = useState<string>("");
 
-  const [uploading, setUploading] = useState(false);          // สถานะกำลังอัปโหลดรูปภาพอยู่หรือไม่
-  const [fileName, setFileName] = useState<string>("");       // ชื่อไฟล์รูปที่เลือก (ไว้แสดงให้ผู้ใช้เห็น)
-  const fileRef = useRef<HTMLInputElement | null>(null);      // ref ไปยัง input type="file" เพื่อเคลียร์ค่าได้
+  // uploading    : สถานะกำลังอัปโหลดรูปอยู่หรือไม่ (ใช้ disable ปุ่มและ input บางส่วน)
+  // fileName     : ชื่อไฟล์รูปที่เลือก (เอาไว้แสดงให้ผู้ใช้ดู)
+  const [uploading, setUploading] = useState(false);
+  const [fileName, setFileName] = useState<string>("");
 
+  // ref สำหรับ input[type="file"] เพื่อให้สามารถเคลียร์ค่าหลังจากใช้งานเสร็จได้
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  // เมื่อเข้าโหมดแก้ไข (isEdit) หรือ initial เปลี่ยน ให้เติมค่าตั้งต้นลงในฟอร์ม
   useEffect(() => {
-    if (isEdit && initial) {                                  // ถ้าอยู่โหมดแก้ไขและมีข้อมูลเริ่มต้น
-      setDisplayName(initial.name || "");                     // เติมชื่อหมวดจาก initial
-      setSlug(initial.id || "");                              // เติม slug จาก id เดิม
-      setSlugEdited(true);                                    // ถือว่า slug ถูกแก้แล้ว จะไม่ auto gen ตามชื่อ
-      setImage(initial.image || "");                          // เติมรูปเดิม (ถ้ามี)
-      setFileName("");                                        // เคลียร์ชื่อไฟล์ที่เลือก
-      if (fileRef.current) fileRef.current.value = "";        // เคลียร์ค่าใน input file
+    if (isEdit && initial) {
+      setDisplayName(initial.name || "");
+      setSlug(initial.id || "");
+      setSlugEdited(true);        // ถือว่า slug ถูกดูแลด้วยมือแล้ว จะไม่ auto-gen ตามชื่ออีก
+      setImage(initial.image || "");
+      setFileName("");
+
+      if (fileRef.current) {
+        fileRef.current.value = "";
+      }
     }
-  }, [isEdit, initial]);                                      // รันเมื่อสถานะ isEdit หรือ initial เปลี่ยน
+  }, [isEdit, initial]);
 
-  const toSlug = (s: string) =>                               // ฟังก์ชันแปลงสตริงให้เป็น slug ปลอดภัย
-    s.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""); // ตัดช่องว่าง แปลงเป็นตัวเล็ก และเหลือเฉพาะ a-z0-9-
+  // ฟังก์ชันช่วยแปลงข้อความให้เป็น slug ที่ปลอดภัยสำหรับใช้เป็น id / URL
+  // 1) trim() เอาช่องว่างหัวท้ายออก
+  // 2) toLowerCase() แปลงเป็นตัวพิมพ์เล็ก
+  // 3) แทนที่ช่องว่างด้วยเครื่องหมาย - (dash)
+  // 4) ตัดอักขระที่ไม่ใช่ a-z, 0-9, หรือ - ทิ้ง
+  const toSlug = (s: string) =>
+    s
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
 
+  // เมื่อผู้ใช้เปลี่ยนชื่อหมวดหมู่
+  // - อัปเดต displayName
+  // - ถ้ายังไม่เคยแก้ slug เอง ให้สร้าง slug จากชื่อให้โดยอัตโนมัติ
   function handleChangeDisplayName(v: string) {
-    setDisplayName(v);                                        // อัปเดตชื่อหมวดหมู่
-    if (!slugEdited) setSlug(toSlug(v));                      // ถ้ายังไม่เคยแก้ slug เอง ให้ auto gen slug จากชื่อ
+    setDisplayName(v);
+    if (!slugEdited) {
+      setSlug(toSlug(v));
+    }
   }
 
+  // เมื่อผู้ใช้พิมพ์ slug เอง
+  // - ตั้งค่า slugEdited = true เพื่อบอกว่า slug นี้ผู้ใช้จะดูแลเอง
+  // - ทำความสะอาดค่าที่กรอกด้วย toSlug
   function handleChangeSlug(v: string) {
-    setSlugEdited(true);                                      // ผู้ใช้เริ่มแก้ slug เองแล้ว
-    setSlug(toSlug(v));                                       // แปลงค่าที่กรอกให้เป็น slug ตามกฎ
+    setSlugEdited(true);
+    setSlug(toSlug(v));
   }
 
+  // จัดการเมื่อผู้ใช้เลือกไฟล์รูปภาพ
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];                            // ดึงไฟล์แรกที่เลือก
-    if (!f) return;                                           // ถ้าไม่มีไฟล์ให้หยุดทำงาน
+    const f = e.target.files?.[0];
+    if (!f) return;
 
-    if (!f.type.startsWith("image/")) {                       // ถ้าไฟล์ไม่ใช่รูปภาพ
-      alert("กรุณาเลือกไฟล์รูปภาพเท่านั้น");                // แจ้งเตือนผู้ใช้
-      if (fileRef.current) fileRef.current.value = "";        // เคลียร์ input file
+    // ป้องกันกรณีเลือกไฟล์ที่ไม่ใช่รูป
+    if (!f.type.startsWith("image/")) {
+      alert("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
+      if (fileRef.current) fileRef.current.value = "";
       return;
     }
 
-    setUploading(true);                                       // ตั้งสถานะกำลังอัปโหลด
-    setFileName(f.name);                                      // เก็บชื่อไฟล์ที่เลือกไว้แสดงผล
+    setUploading(true);
+    setFileName(f.name);
 
     try {
-      const url = await uploadImageToCloudinary(f);           // อัปโหลดไฟล์ขึ้น Cloudinary และรอ URL ตอบกลับ
+      // อัปโหลดรูปไปยัง Cloudinary แล้วรอรับ URL กลับมา
+      const url = await uploadImageToCloudinary(f);
       if (url) {
-        setImage(url);                                        // ถ้าได้ URL กลับมา ให้ใช้เป็นรูปของหมวดนี้
+        setImage(url);
       } else {
-        alert("อัปโหลดรูปไม่สำเร็จ");                       // แจ้งเตือนหากไม่มี URL
+        alert("อัปโหลดรูปไม่สำเร็จ");
         setFileName("");
       }
     } catch {
-      alert("เกิดข้อผิดพลาดในการอัปโหลดรูป");              // แจ้งเตือนเมื่อเกิด error ระหว่างอัปโหลด
+      alert("เกิดข้อผิดพลาดในการอัปโหลดรูป");
       setFileName("");
     } finally {
-      setUploading(false);                                    // ไม่ว่าผลจะสำเร็จหรือไม่ ให้ปิดสถานะ uploading
-      if (fileRef.current) fileRef.current.value = "";        // เคลียร์ input file
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
+  // ล้างข้อมูลรูปภาพออกจากฟอร์ม
   function clearImage() {
-    setImage("");                                             // ลบ URL ภาพออก
-    setFileName("");                                          // ลบชื่อไฟล์ที่เลือก
-    if (fileRef.current) fileRef.current.value = "";          // เคลียร์ input file
+    setImage("");
+    setFileName("");
+    if (fileRef.current) fileRef.current.value = "";
   }
 
-  const idPreview = toSlug(slug || displayName);              // ตัวอย่าง id ที่จะบันทึกจริง (จาก slug หรือ displayName)
-  const invalid = uploading || !displayName.trim() || !idPreview || !image; // เงื่อนไขฟอร์มไม่สมบูรณ์ หรือยังอัปโหลดไม่เสร็จ
+  // idPreview คือ id ที่จะใช้จริงในการบันทึก
+  // ถ้า slug มีค่า ใช้ slug → ถ้า slug ว่างใช้ displayName แปลงเป็น slug แทน
+  const idPreview = toSlug(slug || displayName);
 
+  // invalid เป็น flag เช็คว่า “ฟอร์มยังไม่พร้อมบันทึกหรือไม่”
+  // เงื่อนไข:
+  // - กำลังอัปโหลดอยู่
+  // - ยังไม่ได้กรอกชื่อหมวด
+  // - ยังไม่มี idPreview
+  // - ยังไม่ได้เลือกรูป
+  const invalid =
+    uploading || !displayName.trim() || !idPreview || !image;
+
+  // รีเซ็ตฟอร์มกลับเป็นค่าเริ่มต้น (ใช้หลังเพิ่มสำเร็จ)
   function resetForm() {
-    setDisplayName("");                                       // รีเซ็ตชื่อหมวด
-    setSlug("");                                              // รีเซ็ต slug
-    setSlugEdited(false);                                     // รีเซ็ตสถานะว่า slug ยังไม่ถูกแก้เอง
-    setImage("");                                             // รีเซ็ตรูปภาพ
-    setFileName("");                                          // รีเซ็ตชื่อไฟล์
-    if (fileRef.current) fileRef.current.value = "";          // เคลียร์ input file
+    setDisplayName("");
+    setSlug("");
+    setSlugEdited(false);
+    setImage("");
+    setFileName("");
+    if (fileRef.current) fileRef.current.value = "";
   }
 
+  // เมื่อ submit ฟอร์ม (ทั้งโหมดเพิ่ม และโหมดแก้ไข)
   function submit(e: React.FormEvent) {
-    e.preventDefault();                                       // กันการ submit แล้วรีเฟรชหน้า
-    if (invalid) {                                            // ถ้าฟอร์มยังไม่ถูกต้อง
-      if (uploading) alert("กำลังอัปโหลดรูป กรุณารอสักครู่"); // ถ้ากำลังอัปโหลดอยู่ แจ้งให้รอ
-      else alert("กรอกข้อมูลให้ครบก่อนบันทึก");              // ไม่งั้นแจ้งให้กรอกข้อมูลให้ครบ
+    e.preventDefault(); // กันไม่ให้รีเฟรชหน้า
+
+    if (invalid) {
+      if (uploading) {
+        alert("กำลังอัปโหลดรูป กรุณารอสักครู่");
+      } else {
+        alert("กรอกข้อมูลให้ครบก่อนบันทึก");
+      }
       return;
     }
 
-    // ✅ เช็คซ้ำฝั่งฟอร์ม (เฉพาะตอนเพิ่มใหม่)
-    if (!isEdit) {                                            // ถ้าเป็นโหมดเพิ่มใหม่เท่านั้น
-      const isDup = existingIds.map((s) => s.toLowerCase()).includes(idPreview); // เช็คว่า idPreview ซ้ำกับ existingIds หรือไม่ (ไม่สนตัวพิมพ์เล็ก/ใหญ่)
+    // เช็ค id ซ้ำ ฝั่งฟอร์ม (เฉพาะโหมดเพิ่มใหม่)
+    if (!isEdit) {
+      const normalizedIds = existingIds.map((s) => s.toLowerCase());
+      const isDup = normalizedIds.includes(idPreview.toLowerCase());
+
       if (isDup) {
-        alert(`มีไอดีหมวดหมู่ "${idPreview}" อยู่แล้ว`);   // แจ้งเตือนว่ามี id นี้อยู่แล้ว
+        alert(`มีไอดีหมวดหมู่ "${idPreview}" อยู่แล้ว`);
         return;
       }
     }
 
-    const payload: Category = {                               // สร้างออบเจ็กต์ Category ที่จะส่งกลับ
-      id: idPreview,                                          // ใช้ idPreview เป็น id หมวดหมู่
-      name: displayName.trim(),                               // ชื่อหมวดหมู่ตัดช่องว่างหัวท้าย
-      image,                                                  // URL รูปภาพหมวดหมู่
+    // สร้าง payload Category ที่จะส่งกลับให้ parent
+    const payload: Category = {
+      id: idPreview,
+      name: displayName.trim(),
+      image,
     };
 
-    if (isEdit && onSubmitEdit) {                             // ถ้าอยู่โหมดแก้ไขและมีฟังก์ชัน onSubmitEdit
-      onSubmitEdit(payload);                                  // ส่งข้อมูลที่แก้ไขกลับให้พาเรนต์จัดการ
+    // ถ้าเป็นโหมดแก้ไข ให้เรียก onSubmitEdit
+    // ถ้าเป็นโหมดเพิ่มใหม่ ให้เรียก onAdd แล้วรีเซ็ตฟอร์ม
+    if (isEdit && onSubmitEdit) {
+      onSubmitEdit(payload);
     } else {
-      onAdd(payload);                                         // ถ้าไม่ใช่โหมดแก้ไข → เรียก onAdd เพื่อเพิ่มหมวดใหม่
-      resetForm();                                            // เคลียร์ฟอร์มสำหรับเพิ่มรายการถัดไป
+      onAdd(payload);
+      resetForm();
     }
   }
 
   return (
     <form
-      onSubmit={submit}                                       // เมื่อ submit ฟอร์มให้ใช้ฟังก์ชัน submit ด้านบน
-      className="mb-4 rounded-2xl bg-white/90 p-4 shadow ring-1 ring-black/10" // สไตล์กล่องฟอร์มหมวดหมู่
+      onSubmit={submit}
+      className="mb-4 rounded-2xl bg-white/90 p-4 shadow ring-1 ring-black/10"
     >
+      {/* หัวข้อฟอร์ม เปลี่ยนข้อความตามว่าอยู่โหมดเพิ่ม หรือโหมดแก้ไข */}
       <h3 className="mb-3 text-base font-bold">
-        {isEdit ? "แก้ไขหมวดหมู่" : "เพิ่มหมวดหมู่"}        {/* เปลี่ยนหัวข้อฟอร์มตามโหมด (เพิ่ม / แก้ไข) */}
+        {isEdit ? "แก้ไขหมวดหมู่" : "เพิ่มหมวดหมู่"}
       </h3>
 
+      {/* ส่วนกรอกชื่อหมวดหมู่ และรหัสหมวด (id) */}
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
-          <label className="block text-sm">ชื่อหมวดหมู่ (ไว้แสดงผล)</label> {/* label สำหรับชื่อที่โชว์ให้ผู้ใช้เห็น */}
+          <label className="block text-sm">
+            ชื่อหมวดหมู่ (ไว้แสดงผล)
+          </label>
           <input
-            className="w-full rounded-md border border-black/10 bg-white px-3 py-2" // input ชื่อหมวด
+            className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
             placeholder="เช่น กระเป๋า, เสื้อผ้าผู้ชาย"
-            value={displayName}                                 // ผูกค่ากับ state displayName
-            onChange={(e) => handleChangeDisplayName(e.target.value)} // เมื่อเปลี่ยนให้เรียก handleChangeDisplayName
+            value={displayName}
+            onChange={(e) => handleChangeDisplayName(e.target.value)}
           />
         </div>
 
         <div className="space-y-1">
-          <label className="block text-sm">รหัสหมวด (id)</label> {/* label สำหรับ id ใช้ในระบบ/URL */}
+          <label className="block text-sm">รหัสหมวด (id)</label>
           <input
-            className="w-full rounded-md border border-black/10 bg-white px-3 py-2 font-mono" // input slug ใช้ฟอนต์ monospace
+            className="w-full rounded-md border border-black/10 bg-white px-3 py-2 font-mono"
             placeholder="เช่น bags, clothes-men"
-            value={slug}                                        // ผูกค่ากับ state slug
-            onChange={(e) => handleChangeSlug(e.target.value)}  // เมื่อเปลี่ยนให้เรียก handleChangeSlug
+            value={slug}
+            onChange={(e) => handleChangeSlug(e.target.value)}
           />
           <div className="text-xs text-black/60">
             จะบันทึกเป็น:
-            <code className="ml-1 rounded bg-black/5 px-1">{idPreview || "—"}</code> {/* แสดงตัวอย่าง id จริงที่จะถูกบันทึก */}
+            <code className="ml-1 rounded bg-black/5 px-1">
+              {idPreview || "—"}
+            </code>
           </div>
         </div>
       </div>
 
+      {/* ส่วนอัปโหลดรูปหมวดหมู่ + แสดงสถานะ + แสดงรูปตัวอย่าง */}
       <div className="mt-3 space-y-2">
         <label className="block text-sm">
           อัปโหลดรูปภาพ (1 รูป){" "}
-          {uploading && <span className="text-xs text-blue-600">(กำลังอัปโหลด…)</span>} {/* แสดงสถานะกำลังอัปโหลด */}
+          {uploading && (
+            <span className="text-xs text-blue-600">
+              (กำลังอัปโหลด…)
+            </span>
+          )}
         </label>
 
         <input
-          ref={fileRef}                                       // ผูก ref เพื่อเคลียร์ค่าทีหลังได้
+          ref={fileRef}
           type="file"
-          accept="image/*"                                    // จำกัดให้เลือกเฉพาะไฟล์รูปภาพ
-          onChange={handleImage}                              // เมื่อเลือกไฟล์เรียก handleImage
-          disabled={uploading}                                // ถ้ากำลังอัปโหลด ให้ disable input
+          accept="image/*"
+          onChange={handleImage}
+          disabled={uploading}
           className="w-full rounded-md border border-black/10 bg-white px-3 py-2"
         />
+
         <div className="text-xs text-black/70">
-          {fileName ? <>ไฟล์ที่เลือก: <span className="font-medium">{fileName}</span></> : <>ยังไม่ได้เลือกไฟล์</>} {/* แสดงชื่อไฟล์ หรือข้อความถ้ายังไม่เลือก */}
+          {fileName ? (
+            <>
+              ไฟล์ที่เลือก:{" "}
+              <span className="font-medium">{fileName}</span>
+            </>
+          ) : (
+            <>ยังไม่ได้เลือกไฟล์</>
+          )}
         </div>
 
         {image && (
@@ -191,11 +274,11 @@ export default function CategoryForm({
             <img
               src={image}
               alt="preview"
-              className="h-24 w-32 rounded-lg object-cover ring-1 ring-black/10" // แสดงรูปตัวอย่างของหมวด
+              className="h-24 w-32 rounded-lg object-cover ring-1 ring-black/10"
             />
             <button
               type="button"
-              onClick={clearImage}                             // กดเพื่อลบรูปออกจากฟอร์ม
+              onClick={clearImage}
               className="absolute right-1 top-1 rounded bg-white/90 px-1 text-xs shadow ring-1 ring-black/10"
               title="ลบรูปนี้"
             >
@@ -205,20 +288,27 @@ export default function CategoryForm({
         )}
       </div>
 
+      {/* ปุ่มบันทึก (เพิ่ม/แก้ไข) และปุ่มยกเลิกกรณีอยู่โหมด Edit */}
       <div className="mt-4 flex gap-2">
         <button
           type="submit"
-          disabled={invalid}                                   // ถ้าฟอร์มไม่สมบูรณ์หรือกำลังอัปโหลด ให้กดปุ่มไม่ได้
+          disabled={invalid}
           className="rounded-md bg-black px-4 py-2 text-white shadow hover:opacity-90 disabled:pointer-events-none"
-          title={uploading ? "กำลังอัปโหลดรูป" : invalid ? "กรอกให้ครบก่อนบันทึก" : ""} // tooltip ตามสถานะ
+          title={
+            uploading
+              ? "กำลังอัปโหลดรูป"
+              : invalid
+              ? "กรอกให้ครบก่อนบันทึก"
+              : ""
+          }
         >
-          {isEdit ? "บันทึกการแก้ไข" : "เพิ่ม"}              {/* เปลี่ยนข้อความปุ่มตามโหมด */}
+          {isEdit ? "บันทึกการแก้ไข" : "เพิ่ม"}
         </button>
 
         {isEdit && onCancelEdit && (
           <button
             type="button"
-            onClick={onCancelEdit}                             // กดเพื่อยกเลิกโหมดแก้ไข
+            onClick={onCancelEdit}
             className="rounded-md bg-white px-4 py-2 shadow ring-1 ring-black/10 hover:bg-black/5"
           >
             ยกเลิก

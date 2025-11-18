@@ -1,24 +1,29 @@
-import React from "react"; // นำเข้า React เพื่อใช้ประกาศคอมโพเนนต์และ type React.ReactNode
-import { FiTrendingUp } from "react-icons/fi"; // ไอคอน default รูปกราฟกำลังขึ้นจาก react-icons/fi
+import React from "react"; // ใช้ React ในการประกาศคอมโพเนนต์ และใช้ type React.ReactNode
+import { FiTrendingUp } from "react-icons/fi"; // ไอคอนกราฟแนวขึ้น ให้เป็นไอคอนเริ่มต้นของการ์ด
 
-type Props = { // กำหนดชนิดของ props ที่ StatCard จะรับ
-  title: string; // ชื่อสถิติ เช่น "จำนวนสินค้า", "ยอดขายวันนี้"
-  value: number | string; // ค่าที่จะแสดง เช่น 10 หรือ "10 รายการ"
-  icon?: React.ReactNode; // ไอคอนที่จะแสดงด้านขวา (อนุญาตให้ส่ง React element ใด ๆ)
-}; // ปิด type Props
+// โครงสร้าง props ของการ์ดสถิติ 1 ใบ
+type Props = {
+  title: string;             // ข้อความหัวข้อ เช่น "จำนวนสินค้า", "ยอดขายวันนี้"
+  value: number | string;    // ค่าที่ต้องการโชว์บนการ์ด เช่น 10 หรือ "10 รายการ"
+  icon?: React.ReactNode;    // ไอคอนด้านขวา สามารถส่ง React element อะไรก็ได้
+};
 
-export default function StatCard({ // ประกาศคอมโพเนนต์ StatCard แบบฟังก์ชัน
-  title, // ดึงค่า title จาก props
-  value, // ดึงค่า value จาก props
-  icon = <FiTrendingUp />, // ถ้าไม่ส่ง icon มา จะใช้ FiTrendingUp เป็นค่า default
+export default function StatCard({
+  title,                     // ชื่อสถิติ
+  value,                     // ค่าของสถิติ
+  icon = <FiTrendingUp />,   // ถ้าไม่ส่ง icon เข้ามา ให้ใช้ FiTrendingUp เป็นค่าเริ่มต้น
 }: Props) {
-  return ( // คืน JSX สำหรับการ์ดสถิติ
-    <div className="rounded-2xl bg-white/90 p-4 shadow ring-1 ring-black/10"> {/* กล่องการ์ด พื้นหลังขาว โปร่งเล็กน้อย มุมโค้ง มีเงาและเส้นขอบบาง */}
-      <div className="flex items-center justify-between"> {/* แถวบน: จัด title กับ icon ให้ห่างกันซ้าย-ขวา */}
-        <h3 className="text-sm font-extrabold text-black/80">{title}</h3> {/* แสดงชื่อสถิติด้วยตัวหนา ขนาดเล็ก */}
-        <span className="text-xl">{icon}</span> {/* แสดง icon ที่ส่งมา หรือค่า default ถ้าไม่ได้ส่ง */}
+  return (
+    // การ์ดสถิติพื้นหลังสีขาว มุมโค้ง มีเงาและเส้น ring บาง ๆ
+    <div className="rounded-2xl bg-white/90 p-4 shadow ring-1 ring-black/10">
+      {/* แถวบน: แสดงชื่อสถิติด้านซ้าย และไอคอนด้านขวา */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-extrabold text-black/80">{title}</h3>
+        <span className="text-xl">{icon}</span>
       </div>
-      <div className="mt-2 text-3xl font-extrabold">{value}</div> {/* แสดงค่าของสถิติ ขนาดตัวใหญ่ เน้นด้วยตัวหนามาก */}
+
+      {/* แถวล่าง: แสดงตัวเลข/ค่าของสถิติให้เด่นเป็นตัวใหญ่ */}
+      <div className="mt-2 text-3xl font-extrabold">{value}</div>
     </div>
   );
 }

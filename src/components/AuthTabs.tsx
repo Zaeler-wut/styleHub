@@ -1,24 +1,53 @@
+// คอมโพเนนต์ AuthTabs ใช้สำหรับสลับมุมมองระหว่างหน้า Login และ Register
+// โดยใช้ NavLink ของ react-router ในการเช็คแท็บที่กำลังถูกเลือก (active)
+
 import { NavLink } from "react-router-dom"; // นำเข้า NavLink เพื่อทำลิงก์ที่รู้สถานะ active จาก react-router
 
-const base = "flex-1 text-center py-3 rounded-full font-semibold transition"; // คลาสพื้นฐานของแท็บ (ขนาด/จัดกลาง/โค้ง/แอนิเมชัน)
-const active = "bg-white text-black shadow"; // คลาสเมื่อแท็บอยู่หน้า active (พื้นหลังขาว ตัวหนังสือดำ มีเงา)
-const idle = "bg-black/10 text-black/70 hover:bg-black/20"; // คลาสเมื่อแท็บไม่ได้ active (พื้นหลังจาง และ hover เข้มขึ้นเล็กน้อย)
+// คลาสพื้นฐานที่ใช้ร่วมกันของทั้งสองแท็บ (จัดให้กว้างเท่ากัน, ตัวอักษรอยู่กลาง, ขอบโค้ง และมี transition เวลาเปลี่ยนสถานะ)
+const base = "flex-1 text-center py-3 rounded-full font-semibold transition";
 
-export default function AuthTabs() { // คอมโพเนนต์แท็บสลับระหว่างหน้า Login / Register
+// คลาสสำหรับแท็บที่กำลัง active:
+// - พื้นหลังสีขาว
+// - ตัวหนังสือสีดำ
+// - มีเงาเล็กน้อยให้ดูเด่นขึ้น
+const active = "bg-white text-black shadow";
+
+// คลาสสำหรับแท็บที่ยังไม่ active:
+// - พื้นหลังโปร่งสีดำอ่อน ๆ
+// - ตัวหนังสือสีเทาเข้ม
+// - เมื่อเอาเมาส์ชี้ (hover) จะเข้มขึ้นเล็กน้อยให้รู้ว่ากดได้
+const idle = "bg-black/10 text-black/70 hover:bg-black/20";
+
+// AuthTabs แสดงเป็นแถบแท็บสองปุ่ม: Login และ Register
+// เวลาเปลี่ยนหน้า ระบบจะเปลี่ยนสไตล์ตามว่าแท็บไหนกำลัง active อยู่
+export default function AuthTabs() {
   return (
-    <div className="mb-6 flex gap-3 rounded-full bg-black/10 p-2"> {/* พื้นหลังโค้งมนหุ้มสองแท็บวางเรียงในแนวนอน */}
+    // กล่องพื้นหลังด้านนอกของแท็บ:
+    // - ใช้ flex วางสองแท็บเรียงแนวนอน
+    // - มีระยะห่างระหว่างแท็บ (gap-3)
+    // - พื้นหลังโค้งมนแบบเม็ดยา (rounded-full) และใส่สีดำจาง ๆ
+    <div className="mb-6 flex gap-3 rounded-full bg-black/10 p-2">
+      {/* แท็บไปหน้า /login */}
       <NavLink
-        to="/login" // ลิงก์ไปหน้า /login
-        end // ใช้ end เพื่อให้ active เฉพาะ path ตรง /login ไม่ไปชนกับ /login/...
-        className={({ isActive }) => [base, isActive ? active : idle].join(" ")} // ถ้า isActive ให้ใช้คลาส active ไม่งั้นใช้ idle
+        to="/login"
+        // ใช้ end เพื่อให้ path /login active แค่ตรงเป๊ะ
+        // จะไม่ไปชนกับ path ที่ยาวกว่านี้ เช่น /login/extra
+        end
+        // className รับ callback ที่บอกว่า link นี้กำลัง active หรือไม่
+        // ถ้า isActive เป็น true ใช้คลาส active, ถ้าไม่ใช่ใช้ idle
+        className={({ isActive }) => [base, isActive ? active : idle].join(" ")}
       >
-        Login {/* ป้ายชื่อแท็บ Login */}
+        {/* ข้อความบนแท็บฝั่ง Login */}
+        Login
       </NavLink>
+
+      {/* แท็บไปหน้า /register */}
       <NavLink
-        to="/register" // ลิงก์ไปหน้า /register
-        className={({ isActive }) => [base, isActive ? active : idle].join(" ")} // เลือกคลาสตามสถานะ isActive เช่นเดียวกับแท็บ Login
+        to="/register"
+        className={({ isActive }) => [base, isActive ? active : idle].join(" ")}
       >
-        Register {/* ป้ายชื่อแท็บ Register */}
+        {/* ข้อความบนแท็บฝั่ง Register */}
+        Register
       </NavLink>
     </div>
   );
