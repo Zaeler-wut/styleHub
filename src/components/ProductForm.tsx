@@ -1,15 +1,12 @@
-// src/components/ProductForm.tsx
-// ฟอร์มสำหรับ “เพิ่ม / แก้ไขสินค้า” ใช้ทั้งฝั่ง Admin ในการจัดการข้อมูลสินค้า
-
 import React, { useEffect, useRef, useState } from "react"; // ใช้ useState/useEffect/useRef จัดการ state, lifecycle และ input file
 import { type Product } from "../types/product"; // type Product กำหนดรูปแบบข้อมูลสินค้าที่ฟอร์มนี้จะสร้าง/แก้ไข
 import { uploadImageToCloudinary } from "../services/cloudinary"; // ฟังก์ชันอัปโหลดรูปไปยัง Cloudinary แล้วคืนค่า URL กลับมา
 
 // Props ที่ฟอร์มนี้รับจากภายนอก
-// - initial   : ถ้ามี แสดงว่าอยู่โหมดแก้ไข (edit) และมีข้อมูลเดิมของสินค้า
-// - categories: รายการหมวดหมู่ที่เลือกได้ใน <select>
-// - onSubmit  : callback ส่งข้อมูล Product ออกไปให้ parent พร้อม flag isEdit
-// - onCancel  : ใช้กดยกเลิกตอนอยู่โหมดแก้ไข
+// initial : ถ้ามี แสดงว่าอยู่โหมดแก้ไข (edit) และมีข้อมูลเดิมของสินค้า
+// categories : รายการหมวดหมู่ที่เลือกได้ใน <select>
+// onSubmit : callback ส่งข้อมูล Product ออกไปให้ parent พร้อม flag isEdit
+// onCancel : ใช้กดยกเลิกตอนอยู่โหมดแก้ไข
 type Props = {
   initial?: Product | null;
   categories: string[];
@@ -37,8 +34,8 @@ export default function ProductForm({
   });
 
   // state ที่เกี่ยวกับรูปภาพ
-  // - uploading : true ระหว่างกำลังอัปโหลดรูป (ใช้ปิดปุ่มไม่ให้กดซ้ำ)
-  // - fileNames : รายชื่อไฟล์รูปที่ผู้ใช้เลือกไว้ แสดงเป็นข้อความด้านล่าง input
+  // uploading : true ระหว่างกำลังอัปโหลดรูป (ใช้ปิดปุ่มไม่ให้กดซ้ำ)
+  // fileNames : รายชื่อไฟล์รูปที่ผู้ใช้เลือกไว้ แสดงเป็นข้อความด้านล่าง input
   const [uploading, setUploading] = useState(false);
   const [fileNames, setFileNames] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement | null>(null); // ref สำหรับเคลียร์ค่า input[type=file]
@@ -56,8 +53,8 @@ export default function ProductForm({
   };
 
   // เมื่อ props.initial หรือ categories เปลี่ยน:
-  // - ถ้ามี initial → โหมดแก้ไข: เติมค่าจาก initial เข้าฟอร์ม
-  // - ถ้าไม่มี initial → โหมดเพิ่มใหม่: reset ฟอร์มกลับเป็นค่าเริ่มต้น
+  // ถ้ามี initial โหมดแก้ไข: เติมค่าจาก initial เข้าฟอร์ม
+  // ถ้าไม่มี initial โหมดเพิ่มใหม่: reset ฟอร์มกลับเป็นค่าเริ่มต้น
   useEffect(() => {
     if (initial) {
       // โหมดแก้ไข
@@ -184,7 +181,7 @@ export default function ProductForm({
     // ส่งข้อมูลออกไปให้ parent พร้อมบอกว่าเป็นโหมด edit หรือ add
     onSubmit(payload, !!initial);
 
-    // ถ้าเป็นโหมดเพิ่ม (ไม่ใช่แก้ไข) → รีเซ็ตฟอร์ม
+    // ถ้าเป็นโหมดเพิ่ม ไม่ใช่แก้ไข รีเซ็ตฟอร์ม
     if (!initial) {
       setForm({
         id: 0,

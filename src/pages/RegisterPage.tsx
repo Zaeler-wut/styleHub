@@ -1,5 +1,3 @@
-// src/pages/RegisterPage.tsx
-
 // ส่วน import: ดึงเครื่องมือและคอมโพเนนต์ที่จำเป็นมาใช้ในหน้าสมัครสมาชิก
 import React, { useState } from "react"; // useState ใช้เก็บค่า input และ error ของฟอร์ม
 import { NavLink } from "react-router-dom"; // NavLink ใช้ลิงก์ไปหน้า Login และรู้สถานะ active ได้
@@ -15,20 +13,20 @@ type User = {
   role: "member" | "admin";
 };
 
-// คอมโพเนนต์หลักของหน้า Register (หน้าสมัครสมาชิก)
+// คอมโพเนนต์หลักของหน้า Register หน้าสมัครสมาชิก
 export default function RegisterPage() {
-  // ---------- ส่วนเก็บค่า input ของฟอร์ม ----------
+  // ส่วนเก็บค่า input ของฟอร์ม
   const [username, setUsername] = useState(""); // เก็บชื่อผู้ใช้ที่กรอกในช่อง Username
   const [password, setPassword] = useState(""); // เก็บรหัสผ่านที่กรอก
   const [confirm, setConfirm] = useState("");   // เก็บรหัสผ่านที่ผู้ใช้พิมพ์เพื่อยืนยันอีกครั้ง
 
-  // ---------- ส่วนเก็บข้อความ error ต่อช่อง ----------
-  const [errU, setErrU] = useState("");   // ข้อความ error ของช่อง Username
-  const [errP, setErrP] = useState("");   // ข้อความ error ของช่อง Password
-  const [errC, setErrC] = useState("");   // ข้อความ error ของช่อง Confirm Password
+  // ส่วนเก็บข้อความ error ต่อช่อง
+  const [errU, setErrU] = useState("");  // ข้อความ error ของช่อง Username
+  const [errP, setErrP] = useState("");  // ข้อความ error ของช่อง Password
+  const [errC, setErrC] = useState("");  // ข้อความ error ของช่อง Confirm Password
   const [formErr, setFormErr] = useState(""); // ข้อความ error ระดับฟอร์ม (เช่น ชื่อนี้ถูกใช้แล้ว)
 
-  // ฟังก์ชันทำงานตอนผู้ใช้กดปุ่ม REGISTER (submit ฟอร์ม)
+  // ฟังก์ชันทำงานตอนผู้ใช้กดปุ่ม REGISTER submit ฟอร์ม
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault(); // กันพฤติกรรมปกติของฟอร์มที่รีเฟรชหน้าใหม่
 
@@ -38,21 +36,21 @@ export default function RegisterPage() {
     setErrC("");
     setFormErr("");
 
-    // ---------- ขั้นตอนตรวจสอบความถูกต้องของข้อมูล (Validation) ----------
-    let ok = true;                  // ธงบอกว่าฟอร์มผ่านหรือไม่
-    const u = username.trim();      // ตัดช่องว่างหัวท้ายของชื่อผู้ใช้
+    // ขั้นตอนตรวจสอบความถูกต้องของข้อมูล (Validation)
+    let ok = true; // ธงบอกว่าฟอร์มผ่านหรือไม่
+    const u = username.trim(); // ตัดช่องว่างหัวท้ายของชื่อผู้ใช้
 
     // ตรวจช่อง Username
-    if (!u) {                       // ถ้าไม่กรอกชื่อผู้ใช้เลย
+    if (!u) { // ถ้าไม่กรอกชื่อผู้ใช้เลย
       setErrU("กรุณากรอกชื่อผู้ใช้");
       ok = false;
-    } else if (u.length < 3) {      // ถ้าชื่อสั้นเกินไป
+    } else if (u.length < 3) { // ถ้าชื่อสั้นเกินไป
       setErrU("ชื่อต้องยาวอย่างน้อย 3 ตัวอักษร");
       ok = false;
     }
 
     // ตรวจช่อง Password
-    if (!password) {                // ถ้าไม่กรอกรหัสผ่าน
+    if (!password) { // ถ้าไม่กรอกรหัสผ่าน
       setErrP("กรุณากรอกรหัสผ่าน");
       ok = false;
     } else if (password.length < 6) { // ถ้ารหัสผ่านสั้นกว่า 6 ตัว
@@ -69,7 +67,7 @@ export default function RegisterPage() {
     // ถ้ามีเงื่อนไขใดไม่ผ่าน ให้หยุดการทำงาน ไม่ไปขั้นตอนบันทึก
     if (!ok) return;
 
-    // ---------- โหลดรายชื่อผู้ใช้ที่เคยสมัครไว้จาก localStorage ----------
+    // โหลดรายชื่อผู้ใช้ที่เคยสมัครไว้จาก localStorage
     let localUsers: User[] = []; // เก็บรายการ User ที่เคยสมัครผ่านเว็บนี้
 
     try {
@@ -80,9 +78,9 @@ export default function RegisterPage() {
       localUsers = []; // ถ้ามี error ตอน parse ให้ถือว่าไม่มี user ใน localStorage
     }
 
-    // ---------- ตรวจว่า Username ซ้ำหรือไม่ (ทั้งใน localStorage และในไฟล์ฐาน) ----------
+    // ตรวจว่า Username ซ้ำหรือไม่ ทั้งใน localStorage และในไฟล์ฐาน
     const takenLocal = localUsers.some(
-      (x) => x.name.toLowerCase() === u.toLowerCase() // เช็กชื่อซ้ำใน localStorage (ไม่สนตัวเล็ก/ใหญ่)
+      (x) => x.name.toLowerCase() === u.toLowerCase() // เช็กชื่อซ้ำใน localStorage ไม่สนตัวเล็ก/ใหญ่
     );
 
     const takenBase = (Array.isArray(baseUsers) ? (baseUsers as User[]) : [])
@@ -94,31 +92,31 @@ export default function RegisterPage() {
       return; // ไม่สร้าง user ใหม่
     }
 
-    // ---------- สร้าง User ใหม่ และบันทึกลง localStorage ----------
+    // สร้าง User ใหม่ และบันทึกลง localStorage
     const newUser: User = {
       name: u,
       password,
       role: "member", // สมัครผ่านหน้าเว็บจะได้ role เป็น member เสมอ
     };
 
-    // เขียน users ชุดใหม่ (ของเดิม + user ใหม่) กลับเข้า localStorage
+    // เขียน users ชุดใหม่ ของเดิม user ใหม่ กลับเข้า localStorage
     localStorage.setItem("users", JSON.stringify([...localUsers, newUser]));
 
     // ไม่ทำ auto-login เพื่อให้ขั้นตอนชัดเจน: สมัครเสร็จแล้วให้ไป login เอง
-    // หลังสมัครสำเร็จ → redirect ไปหน้า Login
+    // หลังสมัครสำเร็จ redirect ไปหน้า Login
     window.location.href = "/login";
   };
 
-  // ==================== ส่วนแสดงผล UI ของหน้า Register ====================
+  // ส่วนแสดงผล UI ของหน้า Register
   return (
     <div className="min-h-dvh w-full bg-gradient-to-b from-pink-200 via-purple-500 to-purple-900 flex items-center justify-center px-4">
-      {/* พื้นหลังไล่สี + จัดตำแหน่งให้การ์ดอยู่กลางหน้าจอทั้งแนวตั้งและแนวนอน */}
+      {/* พื้นหลังไล่สี จัดตำแหน่งให้การ์ดอยู่กลางหน้าจอทั้งแนวตั้งและแนวนอน */}
 
       <AuthCard>
-        {/* การ์ดกลางหน้าที่ห่อแท็บ + ฟอร์ม + ข้อความล่างสุด */}
+        {/* การ์ดกลางหน้าที่ห่อแท็บ ฟอร์ม ข้อความล่างสุด */}
 
         <AuthTabs />
-        {/* แถบสลับ LOGIN / REGISTER (ในหน้านี้แท็บ REGISTER จะ active อยู่) */}
+        {/* แถบสลับ LOGIN / REGISTER ในหน้านี้แท็บ REGISTER จะ active อยู่ */}
 
         {/* ฟอร์มสมัครสมาชิก */}
         <form onSubmit={onSubmit} className="space-y-4">
@@ -128,7 +126,7 @@ export default function RegisterPage() {
             placeholder="ชื่อผู้ใช้"
             value={username}
             onChange={(e) => setUsername(e.target.value)} // อัปเดต state username ตามที่พิมพ์
-            error={errU}                                  // ถ้ามีข้อความ error ของช่องนี้ จะถูกแสดงใต้ TextField
+            error={errU} // ถ้ามีข้อความ error ของช่องนี้ จะถูกแสดงใต้ TextField
           />
 
           {/* ช่องกรอกรหัสผ่าน */}
@@ -138,7 +136,7 @@ export default function RegisterPage() {
             placeholder="อย่างน้อย 6 ตัว"
             value={password}
             onChange={(e) => setPassword(e.target.value)} // อัปเดต state password
-            error={errP}                                  // แสดง error ช่อง password ถ้ามี
+            error={errP} // แสดง error ช่อง password ถ้ามี
           />
 
           {/* ช่องยืนยันรหัสผ่าน */}

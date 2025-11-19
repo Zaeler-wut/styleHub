@@ -1,4 +1,3 @@
-// src/pages/LoginPage.tsx
 import React, { useState } from "react"; // ใช้ React และ useState สำหรับจัดการ state ในฟอร์ม
 import { NavLink } from "react-router-dom"; // NavLink สำหรับลิงก์ไปหน้า Register และรู้สถานะ active
 import AuthTabs from "../components/AuthTabs"; // แถบสลับ LOGIN / REGISTER ด้านบนการ์ด

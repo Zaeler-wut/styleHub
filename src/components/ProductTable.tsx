@@ -1,20 +1,19 @@
-// src/components/ProductTable.tsx
-import React, { useMemo, useState } from "react"; // ใช้ useState/useMemo สำหรับ state และการคำนวณที่ cache ได้
+import { useMemo, useState } from "react"; // ใช้ useState/useMemo สำหรับ state และการคำนวณที่ cache ได้
 import { type Product } from "../types/product";  // ใช้ type Product เพื่อให้ props มีชนิดชัดเจน
 
 type Props = {
-  items: Product[];                  // รายการสินค้า (ทั้งหมด) ที่จะเอามาแสดง
-  categories: string[];              // รายชื่อหมวดหมู่ สำหรับใช้เป็นตัวเลือก filter
-  onEdit: (p: Product) => void;      // ฟังก์ชันที่เรียกเมื่อกดปุ่ม "แก้ไข" ส่ง Product กลับไปให้หน้า Admin
-  onDelete: (id: number) => void;    // ฟังก์ชันที่เรียกเมื่อกดปุ่ม "ลบ" ส่ง id ของสินค้านั้นกลับไป
+  items: Product[]; // รายการสินค้า (ทั้งหมด) ที่จะเอามาแสดง
+  categories: string[]; // รายชื่อหมวดหมู่ สำหรับใช้เป็นตัวเลือก filter
+  onEdit: (p: Product) => void; // ฟังก์ชันที่เรียกเมื่อกดปุ่ม แก้ไข ส่ง Product กลับไปให้หน้า Admin
+  onDelete: (id: number) => void; // ฟังก์ชันที่เรียกเมื่อกดปุ่ม ลบ ส่ง id ของสินค้านั้นกลับไป
 };
 
 export default function ProductTable({ items, categories, onEdit, onDelete }: Props) {
   // q = ข้อความสำหรับค้นหา / cat = หมวดหมู่ที่เลือกใน dropdown
-  const [q, setQ] = useState("");                 // เก็บคำค้นหา (ค้นจากชื่อสินค้า / id)
+  const [q, setQ] = useState(""); // เก็บคำค้นหา (ค้นจากชื่อสินค้า / id)
   const [cat, setCat] = useState<string>("__ALL__"); // "__ALL__" = แสดงทุกหมวด
 
-  // ใช้ useMemo ช่วยกรองรายการสินค้าให้ตรงกับคำค้น + หมวดหมู่
+  // ใช้ useMemo ช่วยกรองรายการสินค้าให้ตรงกับคำค้น หมวดหมู่
   const filtered = useMemo(() => {
     return items.filter((p: Product) => {
       // แปลงคำค้นให้เป็นตัวพิมพ์เล็กทั้งหมดก่อนเปรียบเทียบ
@@ -62,7 +61,7 @@ export default function ProductTable({ items, categories, onEdit, onDelete }: Pr
         </div>
       </div>
 
-      {/* ----------------- มุมมองสำหรับจอเล็ก (Mobile) : แสดงเป็นการ์ด ----------------- */}
+      {/* มุมมองสำหรับจอเล็ก (Mobile) : แสดงเป็นการ์ด*/}
       {/* ใช้ sm:hidden เพื่อซ่อนส่วนนี้บนจอ sm ขึ้นไป */}
       <div className="space-y-3 sm:hidden">
         {filtered.map((p) => (
@@ -92,7 +91,7 @@ export default function ProductTable({ items, categories, onEdit, onDelete }: Pr
               </div>
             </div>
 
-            {/* แถวกลาง: หมวดหมู่ + ราคา */}
+            {/* แถวกลาง: หมวดหมู่  ราคา */}
             <div className="mt-2 flex justify-between text-xs text-black/70">
               <span>หมวดหมู่: {p.category}</span>
               <span>ราคา: {p.price.toLocaleString()}</span>
@@ -125,7 +124,7 @@ export default function ProductTable({ items, categories, onEdit, onDelete }: Pr
         )}
       </div>
 
-      {/* ----------------- มุมมองสำหรับจอ sm ขึ้นไป : แสดงเป็นตาราง ----------------- */}
+      {/* มุมมองสำหรับจอ sm ขึ้นไป แสดงเป็นตาราง */}
       {/* ใช้ hidden sm:block เพื่อแสดงเฉพาะจอใหญ่กว่า mobile */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="min-w-full text-sm">

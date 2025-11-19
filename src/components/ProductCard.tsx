@@ -1,26 +1,25 @@
-// src/components/ProductCard.tsx
 // การ์ดแสดงสินค้า 1 ชิ้นในหน้าเว็บ แสดงรูป, ชื่อ, ราคา, สถานะ “ของแท้”,
 // ปุ่มเพิ่ม/ลบรายการโปรด (Favorite) และปุ่มไปยังหน้าร้าน (VIEW STORE)
 
-import React, { useMemo, useState } from "react"; // useMemo ใช้จัดการรูปภาพ, useState ใช้เก็บ index รูปปัจจุบัน
+import { useMemo, useState } from "react"; // useMemo ใช้จัดการรูปภาพ, useState ใช้เก็บ index รูปปัจจุบัน
 import { FiHeart } from "react-icons/fi"; // ไอคอนหัวใจแบบโปร่ง (ยังไม่ได้กดถูกใจ)
 import { AiFillHeart } from "react-icons/ai"; // ไอคอนหัวใจแบบทึบ (กดถูกใจแล้ว)
 
 // ข้อมูลพื้นฐานของสินค้า 1 ชิ้น
 export interface ProductCardProps {
-  id: number;          // รหัสสินค้า (เช่น 1, 2, 3)
-  name: string;        // ชื่อสินค้า
-  price: number;       // ราคาสินค้า (ตัวเลข)
-  category: string;    // หมวดหมู่สินค้า (เช่น clothes, bags)
-  images: string[];    // รายการ URL ของรูปภาพสินค้า
-  storeLink?: string;  // ลิงก์ไปหน้าร้านภายนอก (เช่น Shopee, Lazada)
+  id: number; // รหัสสินค้า (เช่น 1, 2, 3)
+  name: string; // ชื่อสินค้า
+  price: number; // ราคาสินค้า (ตัวเลข)
+  category: string; // หมวดหมู่สินค้า (เช่น clothes, bags)
+  images: string[]; // รายการ URL ของรูปภาพสินค้า
+  storeLink?: string; // ลิงก์ไปหน้าร้านภายนอก (เช่น Shopee, Lazada)
   description?: string; // คำอธิบายสินค้าแบบสั้น ๆ
-  authentic?: boolean;  // ถ้า true หมายถึงสินค้า “ของแท้”
+  authentic?: boolean; // ถ้า true หมายถึงสินค้า “ของแท้”
 }
 
 // เพิ่ม prop ฝั่ง UI: สถานะ Favorite + ฟังก์ชันสลับ Favorite
 type CardProps = ProductCardProps & {
-  isFav?: boolean;        // เป็นสินค้าที่อยู่ในรายการโปรดแล้วหรือยัง
+  isFav?: boolean; // เป็นสินค้าที่อยู่ในรายการโปรดแล้วหรือยัง
   onToggleFav?: () => void; // ฟังก์ชันเรียกตอนผู้ใช้กดปุ่มหัวใจ
 };
 
@@ -35,9 +34,9 @@ export default function ProductCard({
   onToggleFav,
 }: CardProps) {
   // เตรียมรายการรูปภาพ:
-  // - รับจาก props.images
-  // - กรองค่า falsy (เช่น "", null) ทิ้ง
-  // - ถ้าไม่ได้ส่งมาเป็น array ให้ได้ [] แทน
+  // รับจาก props.images
+  // กรองค่า falsy (เช่น "", null) ทิ้ง
+  // ถ้าไม่ได้ส่งมาเป็น array ให้ได้ [] แทน
   const pics = useMemo(
     () => (Array.isArray(images) ? images.filter(Boolean) : []),
     [images]
@@ -61,9 +60,9 @@ export default function ProductCard({
   const goNext = () => hasMany && setIdx((i) => (i + 1) % total);
 
   // จัดการคลิกหัวใจ:
-  // 1) เช็คว่ามี user ใน localStorage หรือไม่ (ต้องล็อกอินก่อน)
-  // 2) ถ้ายังไม่ล็อกอิน → ส่งไปหน้า /login
-  // 3) ถ้าล็อกอินแล้ว → เรียก onToggleFav เพื่อสลับสถานะรายการโปรด
+  // เช็คว่ามี user ใน localStorage หรือไม่ (ต้องล็อกอินก่อน)
+  // ถ้ายังไม่ล็อกอิน ส่งไปหน้า /login
+  // ถ้าล็อกอินแล้ว เรียก onToggleFav เพื่อสลับสถานะรายการโปรด
   const handleFavClick = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -80,8 +79,8 @@ export default function ProductCard({
 
   return (
     // การ์ดหลักของสินค้า:
-    // - ใช้ flex-col เพื่อจัด layout จากบนลงล่าง (รูป → รายละเอียด → ปุ่ม)
-    // - rounded, shadow, ring เพื่อให้ดูเป็นการ์ดลอยขึ้นจากพื้นหลัง
+    // ใช้ flex-col เพื่อจัด layout จากบนลงล่าง รูป  รายละเอียด ปุ่ม
+    // rounded, shadow, ring เพื่อให้ดูเป็นการ์ดลอยขึ้นจากพื้นหลัง
     <div className="relative flex h-full flex-col rounded-[2.5rem] bg-white/85 p-6 shadow-md ring-1 ring-black/5">
       {/* ส่วนรูปสินค้า */}
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
@@ -120,7 +119,7 @@ export default function ProductCard({
               &gt;
             </button>
 
-            {/* จุด (dots) แสดงตำแหน่งรูปปัจจุบันด้านล่างรูปภาพ */}
+            {/* จุด dots แสดงตำแหน่งรูปปัจจุบันด้านล่างรูปภาพ */}
             <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
               {pics.map((_, i) => (
                 <span
@@ -136,7 +135,7 @@ export default function ProductCard({
         )}
       </div>
 
-      {/* ส่วนรายละเอียดสินค้า: ชื่อ / ราคา / badge “ของแท้” / คำอธิบาย */}
+      {/* ส่วนรายละเอียดสินค้า: ชื่อ / ราคา / badge ของแท้ / คำอธิบาย */}
       <div className="mt-3 text-center">
         <h3 className="text-sm font-extrabold tracking-wide">{name}</h3>
         <p className="text-xs">
@@ -157,7 +156,7 @@ export default function ProductCard({
           )}
         </div>
 
-        {/* แสดงคำอธิบายสินค้า (ถ้ามี) จำกัดความสูงโดยใช้ line-clamp-2 */}
+        {/* แสดงคำอธิบายสินค้า ถ้ามี จำกัดความสูงโดยใช้ line-clamp-2 */}
         {description && (
           <p className="mt-1 min-h-[32px] text-xs text-black/60 line-clamp-2">
             {description}
@@ -165,9 +164,9 @@ export default function ProductCard({
         )}
       </div>
 
-      {/* ส่วนปุ่มด้านล่าง: หัวใจ Favorite + badge แท้ + ปุ่ม VIEW STORE */}
+      {/* ส่วนปุ่มด้านล่าง: หัวใจ Favorite badge แท้ ปุ่ม VIEW STORE */}
       <div className="mt-auto flex items-center justify-center gap-3 pt-4">
-        {/* ปุ่มหัวใจ Favorite (ใช้ react-icons) */}
+        {/* ปุ่มหัวใจ Favorite */}
         <button
           onClick={handleFavClick}
           aria-pressed={isFav}
@@ -195,8 +194,8 @@ export default function ProductCard({
         )}
 
         {/* ปุ่มไปหน้าร้านภายนอก:
-            - ถ้ามี storeLink → ใช้ <a> เปิดแท็บใหม่
-            - ถ้าไม่มี → แสดงปุ่ม disabled พร้อม tooltip ว่าไม่มีลิงก์ร้าน */}
+            ถ้ามี storeLink ใช้ <a> เปิดแท็บใหม่
+            ถ้าไม่มี แสดงปุ่ม disabled พร้อม tooltip ว่าไม่มีลิงก์ร้าน */}
         {storeLink ? (
           <a
             href={storeLink}

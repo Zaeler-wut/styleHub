@@ -1,8 +1,6 @@
-// src/pages/FavoritesPage.tsx
-// หน้า "รายการโปรด" ของผู้ใช้
-// - แสดงเฉพาะสินค้าที่ผู้ใช้กดถูกใจ (favorite)
-// - อ่าน/บันทึกข้อมูลรายการโปรดแยกตามผู้ใช้ใน localStorage
-// - รองรับ filter ตามหมวดหมู่บนหน้า Favorites
+// แสดงเฉพาะสินค้าที่ผู้ใช้กดถูกใจ (favorite)
+// อ่าน/บันทึกข้อมูลรายการโปรดแยกตามผู้ใช้ใน localStorage
+// รองรับ filter ตามหมวดหมู่บนหน้า Favorites
 
 import React, { useEffect, useMemo, useState } from "react";
 import ProductCard, { type ProductCardProps } from "../components/ProductCard";
@@ -14,16 +12,16 @@ import { type Product } from "../types/product";
 import { type Category } from "../types/category";
 
 // กำหนด Props สำหรับหน้า FavoritePage
-// - products: รายการสินค้าทั้งหมด (เอามาจาก state กลางใน App)
-// - categories: รายการหมวดหมู่ทั้งหมด (ใช้ทำ label / filter)
+// products: รายการสินค้าทั้งหมด (เอามาจาก state กลางใน App)
+// categories: รายการหมวดหมู่ทั้งหมด (ใช้ทำ label / filter)
 // ทำเป็นแบบ Array ให้ตรงกับสิ่งที่ App ส่งมา
 type Props = {
-  products?: Product[];    // ใช้เป็น array ของสินค้า (อาจไม่มีเลยก็ได้ เลยใส่ ?)
-  categories?: Category[]; // ใช้เป็น array ของหมวดหมู่ (อาจไม่มีเลยก็ได้ เลยใส่ ?)
+  products?: Product[]; //ใช้เป็น array ของสินค้า อาจไม่มีเลยก็ได้ เลยใส่ ?
+  categories?: Category[]; // ใช้เป็น array ของหมวดหมู่ อาจไม่มีเลยก็ได้ เลยใส่ ?
 };
 
 const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
-  // -------- 1) เตรียมข้อมูลสินค้าให้อยู่ในรูปแบบที่ ProductCard ใช้งานได้ --------
+  // เตรียมข้อมูลสินค้าให้อยู่ในรูปแบบที่ ProductCard ใช้งานได้
   const allProducts: ProductCardProps[] = useMemo(() => {
     // เลือก source: ใช้ props.products ก่อน ถ้าไม่มีค่อย fallback เป็น productsSeed
     const src = (Array.isArray(products) && products.length > 0
@@ -48,7 +46,7 @@ const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
     }));
   }, [products]);
 
-  // -------- 2) สร้าง label ของหมวดหมู่ (ใช้แสดงชื่ออ่านง่ายใน dropdown) --------
+  //สร้าง label ของหมวดหมู่ ใช้แสดงชื่ออ่านง่ายใน dropdown
   const catLabel: Record<string, string> = useMemo(() => {
     // เลือก source ของหมวดหมู่: รับจาก props ก่อน ถ้าไม่มีก็ใช้ categoriesSeed
     const src = (Array.isArray(categories) && categories.length > 0
@@ -66,17 +64,17 @@ const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
     return map;
   }, [categories]);
 
-  // -------- 3) ผู้ใช้ปัจจุบัน + รายการ id ของสินค้าโปรดจาก localStorage --------
+  // ผู้ใช้ปัจจุบัน รายการ id ของสินค้าโปรดจาก localStorage
   const [username, setUsername] = useState<string | null>(null); // ชื่อผู้ใช้ที่ล็อกอินอยู่
-  const [favIds, setFavIds] = useState<number[]>([]);           // id สินค้าที่ถูกกด favorite
-  const favKey = username ? `fav:${username}` : null;           // key แยกเก็บ favorite ต่อ user เช่น fav:admin
+  const [favIds, setFavIds] = useState<number[]>([]); // id สินค้าที่ถูกกด favorite
+  const favKey = username ? `fav:${username}` : null; // key แยกเก็บ favorite ต่อ user เช่น fav:admin
 
   // 3.1 เช็กการล็อกอินและดึงชื่อผู้ใช้
   useEffect(() => {
     try {
       const u = JSON.parse(localStorage.getItem("user") || "null");
       if (!u || !u.name) {
-        // ถ้ายังไม่ล็อกอิน → บังคับไปหน้าเข้าสู่ระบบก่อน
+        // ถ้ายังไม่ล็อกอิน  บังคับไปหน้าเข้าสู่ระบบก่อน
         window.location.href = "/login";
         return;
       }
@@ -86,7 +84,7 @@ const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
     }
   }, []);
 
-  // 3.2 โหลดรายการโปรดของ user คนนั้นจาก localStorage
+  // โหลดรายการโปรดของ user คนนั้นจาก localStorage
   useEffect(() => {
     if (!favKey) return;
     try {
@@ -97,7 +95,7 @@ const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
     }
   }, [favKey]);
 
-  // 3.3 ฟังก์ชันสลับสถานะ favorite ของสินค้าตัวหนึ่ง
+  // ฟังก์ชันสลับสถานะ favorite ของสินค้าตัวหนึ่ง
   const toggleFavorite = (id: number) => {
     if (!favKey) {
       window.location.href = "/login";
@@ -105,26 +103,26 @@ const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
     }
     setFavIds((prev) => {
       const next = prev.includes(id)
-        ? prev.filter((x) => x !== id) // ถ้ามีอยู่แล้ว → ลบออก
-        : [...prev, id];              // ถ้ายังไม่มี → เพิ่มเข้าไป
+        ? prev.filter((x) => x !== id) // ถ้ามีอยู่แล้ว ลบออก
+        : [...prev, id]; // ถ้ายังไม่มี เพิ่มเข้าไป
       localStorage.setItem(favKey, JSON.stringify(next)); // เซฟกลับ localStorage
       return next;
     });
   };
 
-  // -------- 4) คัดเฉพาะสินค้าที่อยู่ในรายการโปรด (ตาม favIds) --------
+  // คัดเฉพาะสินค้าที่อยู่ในรายการโปรด ตาม favIds
   const favProducts = useMemo(
     () => allProducts.filter((p) => favIds.includes(p.id)),
     [allProducts, favIds]
   );
 
-  // -------- 5) สร้าง list หมวดหมู่ที่มีอยู่จริงใน favorites (ไว้ใช้ filter) --------
+  // สร้าง list หมวดหมู่ที่มีอยู่จริงใน favorites ไว้ใช้ filter
   const favCategories = useMemo(
     () => Array.from(new Set(favProducts.map((p) => p.category))),
     [favProducts]
   );
 
-  // -------- 6) state เก็บหมวดหมู่ที่เลือกในหน้า Favorites --------
+  // state เก็บหมวดหมู่ที่เลือกในหน้า Favorites
   const [selectedCat, setSelectedCat] = useState<string>("all");
 
   // เลือกเฉพาะสินค้าตามหมวดที่กำลังเลือก
@@ -136,11 +134,11 @@ const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
     [favProducts, selectedCat]
   );
 
-  // -------- 7) ส่วนแสดงผลหน้า Favorites --------
+  // ส่วนแสดงผลหน้า Favorites
   return (
     <div className="min-h-dvh w-full bg-gradient-to-b from-pink-200 via-purple-500 to-purple-900">
       <section className="mx-auto max-w-[1200px] px-6 py-10 md:py-16">
-        {/* แถวบน: หัวเรื่อง + ตัวเลือกหมวดหมู่ */}
+        {/* แถวบน: หัวเรื่อง  ตัวเลือกหมวดหมู่ */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-extrabold text-white drop-shadow">
             รายการโปรดของฉัน
@@ -177,8 +175,8 @@ const FavoritesPage: React.FC<Props> = ({ products, categories }) => {
             {list.map((p) => (
               <ProductCard
                 key={p.id}
-                {...p}                 // ส่งข้อมูลสินค้าให้การ์ด (id, name, price, images ฯลฯ)
-                isFav={true}           // บอกการ์ดว่าอยู่ในรายการโปรดแล้ว
+                {...p} // ส่งข้อมูลสินค้าให้การ์ด id, name, price, images
+                isFav={true} // บอกการ์ดว่าอยู่ในรายการโปรดแล้ว
                 onToggleFav={() => toggleFavorite(p.id)} // กดหัวใจแล้วสลับสถานะ favorite
               />
             ))}

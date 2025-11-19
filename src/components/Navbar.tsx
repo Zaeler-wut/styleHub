@@ -1,10 +1,5 @@
-// Navbar.tsx
-// แถบเมนูด้านบนของเว็บ ใช้แสดงโลโก้, เมนูหลัก (Home / Category / Favorites)
-// และปุ่ม Login / Register หรือชื่อผู้ใช้ + Logout พร้อมรองรับทั้งเดสก์ท็อปและมือถือ
-
 import { Link, NavLink, useLocation } from "react-router-dom"; // ใช้ Link/NavLink สำหรับลิงก์เปลี่ยนหน้า และ useLocation เพื่อรู้ path ปัจจุบัน
 import { useEffect, useState } from "react"; // ใช้ useState เก็บสถานะในหน้า และ useEffect จัดการ side-effect
-import Button from "./Button"; // ปุ่ม UI ที่สร้างไว้ใช้ซ้ำ (ไฟล์นี้ยังไม่ได้ใช้ แต่เตรียมไว้สำหรับขยายในอนาคต)
 
 // คลาสพื้นฐานของลิงก์เมนูแต่ละอัน
 const base =
@@ -66,23 +61,23 @@ export default function Navbar() {
   );
 
   // ฟังก์ชันออกจากระบบ:
-  // 1) ลบข้อมูล user ออกจาก localStorage
-  // 2) reload หน้าเพื่อเคลียร์ state ทั้งหมดที่เกี่ยวข้อง
+  // ลบข้อมูล user ออกจาก localStorage
+  // reload หน้าเพื่อเคลียร์ state ทั้งหมดที่เกี่ยวข้อง
   const logout = () => {
     localStorage.removeItem("user");
     window.location.reload();
   };
 
   // กำหนดเงื่อนไขแสดงปุ่ม ADMIN:
-  // - แสดงเฉพาะเมื่อผู้ใช้เป็น admin
-  // - และตอนนี้ไม่ได้อยู่ภายใต้ path /admin อยู่แล้ว
+  // แสดงเฉพาะเมื่อผู้ใช้เป็น admin
+  // และตอนนี้ไม่ได้อยู่ภายใต้ path /admin อยู่แล้ว
   const showAdminBtn =
     session?.role === "admin" && !pathname.startsWith("/admin");
 
   return (
     // header เป็นแถบด้านบนสุดติดขอบหน้าจอ:
-    // - sticky top-0: เลื่อนหน้าจอแล้ว navbar ยังคงอยู่ด้านบน
-    // - มีเส้นขอบด้านล่าง และพื้นหลังสีขาวโปร่งเล็กน้อย
+    // sticky top-0: เลื่อนหน้าจอแล้ว navbar ยังคงอยู่ด้านบน
+    // มีเส้นขอบด้านล่าง และพื้นหลังสีขาวโปร่งเล็กน้อย
     <header className="sticky top-0 z-50 border-b border-black/5 bg-white/95 backdrop-blur">
       {/* nav เป็นคอนเทนเนอร์ภายใน จัดตำแหน่งโลโก้และเมนูให้กึ่งกลาง และจำกัดความกว้างสูงสุด */}
       <nav className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
@@ -114,7 +109,7 @@ export default function Navbar() {
             // กรณีล็อกอินแล้ว
             <>
               {showAdminBtn ? (
-                // ถ้าเป็น admin และไม่ได้อยู่หน้า /admin → แสดงปุ่ม ADMIN
+                // ถ้าเป็น admin และไม่ได้อยู่หน้า /admin แสดงปุ่ม ADMIN
                 <Link
                   to="/admin"
                   className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white shadow hover:brightness-110"
@@ -123,7 +118,7 @@ export default function Navbar() {
                   ADMIN
                 </Link>
               ) : (
-                // ถ้าอยู่ใน /admin หรือไม่ต้องแสดงปุ่ม → โชว์ชื่อผู้ใช้แทน
+                // ถ้าอยู่ใน /admin หรือไม่ต้องแสดงปุ่ม โชว์ชื่อผู้ใช้แทน
                 <span className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white">
                   {session.name}
                 </span>
@@ -138,7 +133,7 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            // กรณียังไม่ล็อกอิน → แสดงปุ่ม LOGIN และ REGISTER
+            // กรณียังไม่ล็อกอิน แสดงปุ่ม LOGIN และ REGISTER
             <>
               <Link
                 to="/login"
@@ -156,7 +151,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* ปุ่มเมนู Hamburger สำหรับหน้าจอมือถือ (แสดงเฉพาะ md ลงไป) */}
+        {/* ปุ่มเมนู Hamburger สำหรับหน้าจอมือถือ แสดงเฉพาะ md ลงไป */}
         <button
           className="grid h-10 w-10 place-items-center rounded-md ring-1 ring-black/10 md:hidden"
           onClick={() => setOpen((v) => !v)}

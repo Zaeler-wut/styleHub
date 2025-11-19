@@ -1,4 +1,3 @@
-// src/components/CategoryForm.tsx
 // ฟอร์มสำหรับ “เพิ่ม / แก้ไขหมวดหมู่สินค้า”
 // ทำหน้าที่จัดการชื่อหมวด, id (slug), และรูปภาพ (อัปโหลดขึ้น Cloudinary)
 
@@ -7,11 +6,11 @@ import { type Category } from "../types/category";
 import { uploadImageToCloudinary } from "../services/cloudinary";
 
 // กำหนดรูปแบบ props ที่ฟอร์มนี้รับจากภายนอก
-// - onAdd         : ใช้ตอนโหมดเพิ่มหมวดใหม่ ส่ง Category กลับให้พาเรนต์จัดการบันทึก
-// - initial       : ถ้ามีค่า แปลว่ากำลังแก้ไขหมวดเดิม (edit mode)
-// - onSubmitEdit  : ฟังก์ชันสำหรับบันทึกการแก้ไข (ใช้คู่กับ initial)
-// - onCancelEdit  : ฟังก์ชันสำหรับปุ่ม “ยกเลิกแก้ไข”
-// - existingIds   : รายการ id ของหมวดหมู่ที่มีอยู่แล้ว (ใช้สำหรับเช็คไม่ให้ id ซ้ำตอนเพิ่มใหม่)
+// onAdd : ใช้ตอนโหมดเพิ่มหมวดใหม่ ส่ง Category กลับให้พาเรนต์จัดการบันทึก
+// initial : ถ้ามีค่า แปลว่ากำลังแก้ไขหมวดเดิม edit mode
+// onSubmitEdit : ฟังก์ชันสำหรับบันทึกการแก้ไข ใช้คู่กับ initial
+// onCancelEdit : ฟังก์ชันสำหรับปุ่ม “ยกเลิกแก้ไข”
+// existingIds : รายการ id ของหมวดหมู่ที่มีอยู่แล้ว ใช้สำหรับเช็คไม่ให้ id ซ้ำตอนเพิ่มใหม่
 type Props = {
   onAdd: (c: Category) => void;
   initial?: Category | null;
@@ -30,18 +29,18 @@ export default function CategoryForm({
   // ถ้ามีทั้ง initial และ onSubmitEdit แสดงว่าเป็นโหมดแก้ไข
   const isEdit = !!initial && !!onSubmitEdit;
 
-  // displayName  : ชื่อหมวดหมู่ที่เอาไว้แสดงบนหน้าเว็บ
-  // slug         : รหัสหมวดหมู่ (id ที่ใช้ในระบบ / URL)
-  // slugEdited   : ใช้เช็คว่าผู้ใช้เคยแก้ slug เองหรือยัง (ถ้าเคยแล้วจะไม่ auto-gen จากชื่ออีก)
+  // displayName : ชื่อหมวดหมู่ที่เอาไว้แสดงบนหน้าเว็บ
+  // slug : รหัสหมวดหมู่ (id ที่ใช้ในระบบ / URL)
+  // slugEdited : ใช้เช็คว่าผู้ใช้เคยแก้ slug เองหรือยัง (ถ้าเคยแล้วจะไม่ auto-gen จากชื่ออีก)
   const [displayName, setDisplayName] = useState<string>("");
   const [slug, setSlug] = useState<string>("");
   const [slugEdited, setSlugEdited] = useState(false);
 
-  // image        : เก็บ URL รูปหมวดหมู่ที่อัปโหลดสำเร็จแล้ว
+  // image : เก็บ URL รูปหมวดหมู่ที่อัปโหลดสำเร็จแล้ว
   const [image, setImage] = useState<string>("");
 
-  // uploading    : สถานะกำลังอัปโหลดรูปอยู่หรือไม่ (ใช้ disable ปุ่มและ input บางส่วน)
-  // fileName     : ชื่อไฟล์รูปที่เลือก (เอาไว้แสดงให้ผู้ใช้ดู)
+  // uploading : สถานะกำลังอัปโหลดรูปอยู่หรือไม่ (ใช้ disable ปุ่มและ input บางส่วน)
+  // fileName : ชื่อไฟล์รูปที่เลือก (เอาไว้แสดงให้ผู้ใช้ดู)
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState<string>("");
 
@@ -53,7 +52,7 @@ export default function CategoryForm({
     if (isEdit && initial) {
       setDisplayName(initial.name || "");
       setSlug(initial.id || "");
-      setSlugEdited(true);        // ถือว่า slug ถูกดูแลด้วยมือแล้ว จะไม่ auto-gen ตามชื่ออีก
+      setSlugEdited(true);// ถือว่า slug ถูกดูแลด้วยมือแล้ว จะไม่ auto-gen ตามชื่ออีก
       setImage(initial.image || "");
       setFileName("");
 
@@ -64,10 +63,10 @@ export default function CategoryForm({
   }, [isEdit, initial]);
 
   // ฟังก์ชันช่วยแปลงข้อความให้เป็น slug ที่ปลอดภัยสำหรับใช้เป็น id / URL
-  // 1) trim() เอาช่องว่างหัวท้ายออก
-  // 2) toLowerCase() แปลงเป็นตัวพิมพ์เล็ก
-  // 3) แทนที่ช่องว่างด้วยเครื่องหมาย - (dash)
-  // 4) ตัดอักขระที่ไม่ใช่ a-z, 0-9, หรือ - ทิ้ง
+  // trim() เอาช่องว่างหัวท้ายออก
+  // toLowerCase() แปลงเป็นตัวพิมพ์เล็ก
+  // แทนที่ช่องว่างด้วยเครื่องหมาย - dash
+  // ตัดอักขระที่ไม่ใช่ a-z, 0-9, หรือ - ทิ้ง
   const toSlug = (s: string) =>
     s
       .trim()
@@ -76,8 +75,8 @@ export default function CategoryForm({
       .replace(/[^a-z0-9-]/g, "");
 
   // เมื่อผู้ใช้เปลี่ยนชื่อหมวดหมู่
-  // - อัปเดต displayName
-  // - ถ้ายังไม่เคยแก้ slug เอง ให้สร้าง slug จากชื่อให้โดยอัตโนมัติ
+  // อัปเดต displayName
+  // ถ้ายังไม่เคยแก้ slug เอง ให้สร้าง slug จากชื่อให้โดยอัตโนมัติ
   function handleChangeDisplayName(v: string) {
     setDisplayName(v);
     if (!slugEdited) {
@@ -86,8 +85,8 @@ export default function CategoryForm({
   }
 
   // เมื่อผู้ใช้พิมพ์ slug เอง
-  // - ตั้งค่า slugEdited = true เพื่อบอกว่า slug นี้ผู้ใช้จะดูแลเอง
-  // - ทำความสะอาดค่าที่กรอกด้วย toSlug
+  // ตั้งค่า slugEdited = true เพื่อบอกว่า slug นี้ผู้ใช้จะดูแลเอง
+  // ทำความสะอาดค่าที่กรอกด้วย toSlug
   function handleChangeSlug(v: string) {
     setSlugEdited(true);
     setSlug(toSlug(v));
@@ -134,15 +133,15 @@ export default function CategoryForm({
   }
 
   // idPreview คือ id ที่จะใช้จริงในการบันทึก
-  // ถ้า slug มีค่า ใช้ slug → ถ้า slug ว่างใช้ displayName แปลงเป็น slug แทน
+  // ถ้า slug มีค่า ใช้ slug ถ้า slug ว่างใช้ displayName แปลงเป็น slug แทน
   const idPreview = toSlug(slug || displayName);
 
   // invalid เป็น flag เช็คว่า “ฟอร์มยังไม่พร้อมบันทึกหรือไม่”
   // เงื่อนไข:
-  // - กำลังอัปโหลดอยู่
-  // - ยังไม่ได้กรอกชื่อหมวด
-  // - ยังไม่มี idPreview
-  // - ยังไม่ได้เลือกรูป
+  // กำลังอัปโหลดอยู่
+  // ยังไม่ได้กรอกชื่อหมวด
+  // ยังไม่มี idPreview
+  // ยังไม่ได้เลือกรูป
   const invalid =
     uploading || !displayName.trim() || !idPreview || !image;
 
@@ -238,7 +237,7 @@ export default function CategoryForm({
         </div>
       </div>
 
-      {/* ส่วนอัปโหลดรูปหมวดหมู่ + แสดงสถานะ + แสดงรูปตัวอย่าง */}
+      {/* ส่วนอัปโหลดรูปหมวดหมู่  แสดงสถานะ  แสดงรูปตัวอย่าง */}
       <div className="mt-3 space-y-2">
         <label className="block text-sm">
           อัปโหลดรูปภาพ (1 รูป){" "}

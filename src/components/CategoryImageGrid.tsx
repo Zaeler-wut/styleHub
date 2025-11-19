@@ -1,4 +1,3 @@
-// src/components/CategoryImageGrid.tsx
 // คอมโพเนนต์แสดง “หมวดหมู่สินค้าแบบมีรูปภาพ” ในรูปแบบกริด
 // แต่ละการ์ดกดแล้วจะลิงก์ไปหน้ารายการสินค้าตามหมวดหมู่
 
@@ -7,21 +6,18 @@ import { Link } from "react-router-dom";
 import seedCats from "../data/categorys.json";
 
 // โครงสร้างข้อมูลหมวดหมู่ที่ใช้ภายในคอมโพเนนต์นี้
-// - id          : รหัสหมวด (ใช้กับ URL และ key)
-// - name        : ชื่อหมวดหมู่ที่เอาไว้แสดงผล
-// - image       : URL รูปภาพประจำหมวด
-// - description : เผื่อไว้สำหรับคำอธิบายหมวด (ตอนนี้ยังไม่ได้ใช้ก็ได้)
+// id : รหัสหมวด
+// name : ชื่อหมวดหมู่ที่เอาไว้แสดงผล
+// image : URL รูปภาพประจำหมวด
 type Category = {
   id: string;
   name?: string;
   image?: string;
-  description?: string;
 };
 
 // รูปแบบ props ของ CategoryImageGrid
-// - categories : ถ้ามี จะใช้ข้อมูลชุดนี้เป็นหลัก (เช่นจากฐานข้อมูลจริง)
-// - className  : เพิ่มคลาส Tailwind สำหรับ container ภายนอก
-// - limit      : จำกัดจำนวนหมวดหมู่ที่จะแสดงในกริด
+// categories : ถ้ามี จะใช้ข้อมูลชุดนี้เป็นหลัก (เช่นจากฐานข้อมูลจริง)
+// className : เพิ่มคลาส Tailwind สำหรับ container ภายนอก
 type Props = {
   categories?: Category[];
   className?: string;
@@ -59,8 +55,8 @@ const CategoryImageGrid: React.FC<Props> = ({
       });
     }
 
-    // ถ้า props.categories มีค่าและไม่ว่าง → ใช้เป็น source หลัก
-    // ถ้าไม่ → ใช้ข้อมูลจาก seedArr แทน
+    // ถ้า props.categories มีค่าและไม่ว่าง ใช้เป็น source หลัก
+    // ถ้าไม่ ใช้ข้อมูลจาก seedArr แทน
     const useProps = Array.isArray(categories) && categories.length > 0;
     const src: Category[] = useProps
       ? categories!
@@ -82,14 +78,14 @@ const CategoryImageGrid: React.FC<Props> = ({
       const seed = seedMap.get(key);
 
       // ลำดับการเลือกค่า name:
-      // 1) ใช้จาก props.categories ก่อน
-      // 2) ถ้าไม่มีใช้จาก seedCats
-      // 3) ถ้ายังไม่มีเลย ใช้ id แทน
+      // ใช้จาก props.categories ก่อน
+      // ถ้าไม่มีใช้จาก seedCats
+      // ถ้ายังไม่มีเลย ใช้ id แทน
       const name = (c.name || seed?.name || idRaw).toString();
 
       // ลำดับการเลือกค่า image:
-      // 1) ใช้รูปจาก props ก่อน
-      // 2) ถ้าไม่มีใช้จาก seedCats
+      // ใช้รูปจาก props ก่อน
+      // ถ้าไม่มีใช้จาก seedCats
       const image = (c.image || seed?.image)?.toString().trim();
 
       if (!map.has(key)) {
@@ -97,7 +93,7 @@ const CategoryImageGrid: React.FC<Props> = ({
       }
     }
 
-    // แปลง map → array แล้วกรองเอาเฉพาะหมวดที่มีรูปภาพจริง
+    // แปลง map array แล้วกรองเอาเฉพาะหมวดที่มีรูปภาพจริง
     const arr = Array.from(map.values()).filter(
       (c) => !!(c.image && c.image.trim())
     );
@@ -108,8 +104,8 @@ const CategoryImageGrid: React.FC<Props> = ({
 
   return (
     // กริดแสดงการ์ดหมวดหมู่:
-    // - grid-cols-2 : แบ่งเป็น 2 คอลัมน์
-    // - gap-6       : เว้นช่องไฟระหว่างการ์ด
+    // grid-cols-2 : แบ่งเป็น 2 คอลัมน์
+    // gap-6 : เว้นช่องไฟระหว่างการ์ด
     <div className={`grid grid-cols-2 gap-6 ${className}`}>
       {items.map((c) => {
         const idNorm = norm(c.id);
@@ -131,7 +127,7 @@ const CategoryImageGrid: React.FC<Props> = ({
                   alt={c.name || c.id}
                   className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   loading="lazy"
-                  // ถ้าโหลดรูปไม่สำเร็จให้ซ่อนรูป (จะกลายเป็นการ์ด 'ไม่มีรูป')
+                  // ถ้าโหลดรูปไม่สำเร็จให้ซ่อนรูป
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).style.display =
                       "none";

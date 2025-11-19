@@ -4,26 +4,26 @@
 import React from "react";
 
 // กำหนดชนิดของรูปแบบปุ่ม (variant) ที่รองรับ:
-// - primary : ปุ่มหลัก พื้นหลังทึบ
-// - outline : ปุ่มขอบดำ พื้นหลังขาว
+// primary : ปุ่มหลัก พื้นหลังทึบ
+// outline : ปุ่มขอบดำ พื้นหลังขาว
 type Variant = "primary" | "outline";
 
 // กำหนดขนาดของปุ่มที่เลือกใช้ได้:
-// - sm : ขนาดเล็ก
-// - md : ขนาดกลาง
-// - lg : ขนาดใหญ่
+// sm : ขนาดเล็ก
+// md : ขนาดกลาง
+// lg : ขนาดใหญ่
 type Size = "sm" | "md" | "lg";
 
 /**
  * โครงสร้าง props ของคอมโพเนนต์ Button
- * - label      : ข้อความที่จะแสดงบนปุ่ม
- * - type       : ประเภทปุ่มตามมาตรฐาน HTML (button / submit / reset)
- * - variant    : เลือกรูปแบบสีของปุ่ม (primary / outline)
- * - size       : เลือกขนาดปุ่ม (sm / md / lg)
- * - fullWidth  : ถ้า true จะขยายปุ่มให้กว้างเต็มบรรทัด
- * - className  : ใช้เพิ่มคลาส Tailwind เพิ่มเติมจากภายนอก
- * - disabled   : ใช้ปิดการใช้งานปุ่ม (เช่น ระหว่างกำลังส่งฟอร์ม)
- * - onClick    : ฟังก์ชันที่ถูกเรียกเมื่อผู้ใช้คลิกปุ่ม
+ * label : ข้อความที่จะแสดงบนปุ่ม
+ * type : ประเภทปุ่มตามมาตรฐาน HTML (button / submit / reset)
+ * variant : เลือกรูปแบบสีของปุ่ม (primary / outline)
+ * size : เลือกขนาดปุ่ม (sm / md / lg)
+ * fullWidth : ถ้า true จะขยายปุ่มให้กว้างเต็มบรรทัด
+ * className : ใช้เพิ่มคลาส Tailwind เพิ่มเติมจากภายนอก
+ * disabled : ใช้ปิดการใช้งานปุ่ม (เช่น ระหว่างกำลังส่งฟอร์ม)
+ * onClick : ฟังก์ชันที่ถูกเรียกเมื่อผู้ใช้คลิกปุ่ม
  */
 interface ButtonProps {
   label: string;
@@ -36,7 +36,7 @@ interface ButtonProps {
   onClick?: () => void;
 }
 
-// ตารางแมปขนาดปุ่ม → คลาส Tailwind ที่ใช้จริงในแต่ละขนาด
+// ตารางแมปขนาดปุ่ม /คลาส Tailwind ที่ใช้จริงในแต่ละขนาด
 // แยกไว้ตรงนี้เพื่อให้จัดการ/ปรับแต่งสไตล์แต่ละขนาดได้ง่าย
 const sizeMap: Record<Size, string> = {
   sm: "px-3 py-2 text-xs rounded-xl",
@@ -57,9 +57,9 @@ const variantMap: Record<Variant, string> = {
 // ใช้ React.FC เพื่อผูกกับชนิด ButtonProps ที่เรากำหนดไว้ด้านบน
 const Button: React.FC<ButtonProps> = ({
   label,
-  type = "button",        // ถ้าไม่กำหนด จะเป็นปุ่มธรรมดา (ไม่ trigger submit ฟอร์ม)
-  variant = "primary",     // ค่าเริ่มต้นใช้สไตล์ primary
-  size = "lg",             // ค่าเริ่มต้นให้เป็นปุ่มขนาดใหญ่ (เหมาะเป็นปุ่มหลัก)
+  type = "button",  // ถ้าไม่กำหนด จะเป็นปุ่มธรรมดา (ไม่ trigger submit ฟอร์ม)
+  variant = "primary", // ค่าเริ่มต้นใช้สไตล์ primary
+  size = "lg",  // ค่าเริ่มต้นให้เป็นปุ่มขนาดใหญ่ (เหมาะเป็นปุ่มหลัก)
   fullWidth,
   className = "",
   disabled,

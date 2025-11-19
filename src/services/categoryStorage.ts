@@ -1,4 +1,4 @@
-import { type Category } from "../types/category"; // นำเข้า type Category เพื่อใช้ระบุชนิดข้อมูลของหมวดหมู่
+import { type Category } from "../types/category";
 
 const KEY = "categories_v1"; // กำหนดชื่อ key สำหรับเก็บ/อ่านหมวดหมู่จาก localStorage
 

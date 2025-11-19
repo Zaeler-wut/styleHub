@@ -1,4 +1,3 @@
-// src/components/TextField.tsx
 // ช่องกรอกข้อมูลแบบ reusable ใช้ได้กับฟอร์มหลาย ๆ ที่
 // รองรับ label, ข้อความ error และ attrs พื้นฐานของ <input> ทั้งหมด
 
@@ -27,8 +26,8 @@ export default function TextField({
       </label>
 
       {/* ช่อง input หลัก:
-          - รองรับ props จากภายนอกผ่าน ...rest
-          - ถ้ามี error จะเปลี่ยนสีขอบเป็นแดงอ่อน
+          รองรับ props จากภายนอกผ่าน ...rest
+          ถ้ามี error จะเปลี่ยนสีขอบเป็นแดงอ่อน
       */}
       <input
         {...rest}

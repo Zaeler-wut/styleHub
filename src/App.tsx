@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useEffect, useMemo, useState } from "react"; // ใช้จัดการ state, memo และ side-effect
+import { useEffect, useMemo, useState } from "react"; // ใช้จัดการ state, memo และ side-effect
 import { Routes, Route, useLocation } from "react-router-dom"; // ใช้กำหนดเส้นทางของหน้า (Routing)
 
 import Navbar from "./components/Navbar"; // แถบนำทางด้านบน (แสดงเฉพาะหน้า user)
